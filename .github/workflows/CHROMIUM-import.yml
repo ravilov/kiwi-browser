@@ -10,6 +10,12 @@ on:
         required: true
         default: ''
 
+env:
+  - CHROMIUM_MAJOR:
+  - CHROMIUM_MINOR:
+  - CHROMIUM_BUILD:
+  - CHROMIUM_PATCH:
+
 jobs:
   build:
     # The type of runner that the job will run on
@@ -38,16 +44,20 @@ jobs:
           env | grep -F CHROMIUM_ >> $GITHUB_ENV
 
       - name: Downloading file
-        run: wget "https://chromium.googlesource.com/chromium/src/+/refs/tags/${{ env.CHROMIUM_MAJOR }}.${{ env.CHROMIUM_MINOR }}.${{ env.CHROMIUM_BUILD }}.${{ env.CHROMIUM_PATCH }}/${{ github.event.inputs.path }}?format=TEXT" -O /tmp/file.txt
+        run: |
+          wget "https://chromium.googlesource.com/chromium/src/+/refs/tags/${{ env.CHROMIUM_MAJOR }}.${{ env.CHROMIUM_MINOR }}.${{ env.CHROMIUM_BUILD }}.${{ env.CHROMIUM_PATCH }}/${{ github.event.inputs.path }}?format=TEXT" -O /tmp/file.txt
 
       - name: Creating folder where the file is stored
-        run: mkdir -p "$(dirname '${{ github.event.inputs.path }}')"
+        run: |
+          mkdir -p "$(dirname '${{ github.event.inputs.path }}')"
 
       - name: Decoding file
-        run: cat /tmp/file.txt | base64 --decode > ${{ github.event.inputs.path }}
+        run: |
+          cat /tmp/file.txt | base64 --decode > ${{ github.event.inputs.path }}
 
       - name: Adding file to Git repository
-        run: git add ${{ github.event.inputs.path }}
+        run: |
+          git add ${{ github.event.inputs.path }}
 
       - name: Importing assets from adjacent folders (if it's an image)
         if: contains(github.event.inputs.path, 'drawable-') || contains(github.event.inputs.path, 'mipmap-')
@@ -68,8 +78,10 @@ jobs:
           done
 
       - name: Committing file(s)
-        run: git commit --allow-empty -a -m '[Chromium] Importing ${{ github.event.inputs.path }} from version ${{ env.CHROMIUM_MAJOR }}.${{ env.CHROMIUM_MINOR }}.${{ env.CHROMIUM_BUILD }}.${{ env.CHROMIUM_PATCH }}'
+        run: |
+          git commit --allow-empty -a -m '[Chromium] Importing ${{ github.event.inputs.path }} from version ${{ env.CHROMIUM_MAJOR }}.${{ env.CHROMIUM_MINOR }}.${{ env.CHROMIUM_BUILD }}.${{ env.CHROMIUM_PATCH }}'
 
 
       - name: Pushing repository
-        run: git push origin chromium
+        run: |
+          git push origin chromium
