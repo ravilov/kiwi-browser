@@ -1,6 +1,6 @@
 # Import a file from Chromium, relative path to https://source.chromium.org/chromium/chromium/src
 # In case the file is in a drawable-* folder (e.g. drawable-mdpi), all the adjacent (mdpi, xhdpi, etc) assets for the same file will be imported. 
-name: 'Chromium: Import file'
+name: 'CHROMIUM: import file'
 
 on:
   workflow_dispatch:
