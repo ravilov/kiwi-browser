@@ -4,17 +4,16 @@ on:
   workflow_dispatch:
     inputs:
       prepareRelease:
-        description: 'Create a draft release in Google Play Store'
+        description: 'Create a draft release in Google Play Store?'
         required: true
         default: 'no'
       announceOnMessengers:
-        description: 'Announce new release on Discord and Telegram channels'
+        description: 'Announce new release on Discord and Telegram channels?'
         required: true
         default: 'no'
 
 jobs:
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
     strategy:
@@ -32,130 +31,127 @@ jobs:
     #
     # We store the source-code repository (kiwibrowser/src) on /dev/disk/azure/root-part1
     # We store cache, dependencies and output on /dev/disk/azure/resource-part1 (SSD)
-    #
-    # Steps represent a sequence of tasks that will be executed as part of the job
-    steps:
-      - name: Initializing build
-        run: |
-          echo Initializing build for platform ${{ matrix.platform }}
 
-      - name: Updating APT repository
+    steps:
+      - name: Initialize build
+        run: |
+          echo "Initializing build for platform '${{ matrix.platform }}'"
+
+      - name: Update APT
         run: |
           sudo apt-get update
 
-      - name: Installing rclone
+      - name: Install rclone
         run: |
           sudo -v && \
-          wget https://downloads.rclone.org/v1.63.1/rclone-v1.63.1-linux-amd64.deb && \
+          wget "https://downloads.rclone.org/v1.63.1/rclone-v1.63.1-linux-amd64.deb" && \
           sudo dpkg -i rclone-v1.63.1-linux-amd64.deb
 
-      - name: Installing Python and OpenJDK
+      - name: Install support packages
         run: |
           sudo apt-get install -y 2to3 python3-minimal python3 dh-python python-is-python3 openjdk-8-jdk-headless ccache jq
 
-      - name: Reclaiming disk space on / by disabling swap partition
+      - name: Reclaim disk space
         run: |
           sudo swapoff -av
           sudo rm -f /swapfile
-
-      - name: Reclaiming disk space on / by removing .NET framework
-        run: |
           sudo rm -rf /usr/share/dotnet
 
-      - name: Checking-out source-code in $GITHUB_WORKSPACE
+      - name: Get source in $GITHUB_WORKSPACE
         uses: actions/checkout@v2
 
-      - name: Creating secondary disk folder on /dev/disk/azure/resource-part1 (SSD)
+      - name: Create secondary disk
         run: |
           sudo mkdir -p /extended_data
           sudo chown -R runner:docker /extended_data
       
       # If you want to use only the SSD, you can use:
-      - name: On SSD - Creating symlink on /dev/disk/azure/root-part1 pointing to /dev/disk/azure/resource-part1
+      - name: Create symlink
         run: |
           sudo ln -s /extended_data /mnt/secondary_disk
           sudo ln -s /mnt/secondary_disk $GITHUB_WORKSPACE/
       # or alternatively, to work on the main partition
-      # - name: On HDD - Creating symlink on /dev/disk/azure/root-part1 pointing to /dev/disk/azure/resource-part1
-      #  run: |
-      #    sudo ln -s /extended_data /mnt/secondary_disk
-      #    sudo ln -s /mnt/secondary_disk $GITHUB_WORKSPACE/
+      #run: |
+      #  sudo ln -s /extended_data /mnt/secondary_disk
+      #  sudo ln -s /mnt/secondary_disk $GITHUB_WORKSPACE/
 
       # We cannot checkout outside of $GITHUB_WORKSPACE, but we want to checkout to the SSD
 
-      - name: Creating output folder
+      - name: Create output path
         run: |
-          mkdir -p secondary_disk/out/android_${{ matrix.platform }}
+          mkdir -p secondary_disk/out/android_${{ matrix.platform }}/
 
-      - name: Generating one-time APK signature key
+      - name: Generate one-time APK signature key
         run: |
           keytool -genkey -v -keystore keystore.jks -alias dev -keyalg RSA -keysize 2048 -validity 10000 -storepass public_password -keypass public_password -dname "cn=Kiwi Browser (unverified), ou=Actions, o=Kiwi Browser, c=GitHub"
 
-      - name: Copying args.gn to target folder
+      - name: Copy args.gn to target path
         run: |
           cat .build/android_arm/args.gn | \
           sed -e "s#target_cpu = \"arm\"#target_cpu = \"${{ matrix.platform }}\"#" | \
           sed -e "s#android_default_version_name = \"Git\"#android_default_version_name = \"Git$(date '+%y%m%d')Gen${{ github.run_id }}\"#" > secondary_disk/out/android_${{ matrix.platform }}/args.gn
 
-      - name: Creating rclone config
+      - name: Create rclone config
         run: |
-          mkdir -p $HOME/.config/rclone/
-          echo '[cache]' > $HOME/.config/rclone/rclone.conf
-          echo 'type = sftp' >> $HOME/.config/rclone/rclone.conf
-          echo 'host = ${{ secrets.STORAGE_HOST }}' >> $HOME/.config/rclone/rclone.conf
-          echo 'user = storage' >> $HOME/.config/rclone/rclone.conf
-          echo 'key_pem = ${{ secrets.STORAGE_KEY }}' >> $HOME/.config/rclone/rclone.conf
+          mkdir -p "${HOME}/.config/rclone/" && \
+          cat << EOF > "${HOME}/.config/rclone/rclone.conf"
+          [cache]
+          type = sftp
+          host = ${{ secrets.STORAGE_HOST }}
+          user = storage
+          key_pem = ${{ secrets.STORAGE_KEY }}
+          EOF
 
-      - name: Modifying args.gn (arm)
+      - name: Modify args.gn for 'arm'
         if: matrix.platform == 'arm'
         run: |
           sed -i "s#android_default_version_code = \"1\"#android_default_version_code = \"$(date '+%y%m%d')1\"#" secondary_disk/out/android_${{ matrix.platform }}/args.gn
 
-      - name: Modifying args.gn (arm64)
+      - name: Modify args.gn for 'arm64'
         if: matrix.platform == 'arm64'
         run: |
           sed -i "s#android_default_version_code = \"1\"#android_default_version_code = \"$(date '+%y%m%d')2\"#" secondary_disk/out/android_${{ matrix.platform }}/args.gn
 
-      - name: Modifying args.gn (x86)
+      - name: Modify args.gn for 'x86'
         if: matrix.platform == 'x86'
         run: |
           sed -i "s#android_default_version_code = \"1\"#android_default_version_code = \"$(date '+%y%m%d')3\"#" secondary_disk/out/android_${{ matrix.platform }}/args.gn
 
-      - name: Modifying args.gn (x64)
+      - name: Modify args.gn for 'x64'
         if: matrix.platform == 'x64'
         run: |
           sed -i "s#android_default_version_code = \"1\"#android_default_version_code = \"$(date '+%y%m%d')4\"#" secondary_disk/out/android_${{ matrix.platform }}/args.gn
 
-      - name: Displaying args.gn
+      - name: Display args.gn
         run: |
           cat secondary_disk/out/android_${{ matrix.platform }}/args.gn
 
-      - name: Checking available disk-space
+      - name: Check available disk-space
         run: |
           df -h
 
-      - name: Uploading args.gn
+      - name: Upload args.gn
         run: |
-          rclone copy --transfers=128 --retries=10 secondary_disk/out/android_${{ matrix.platform }}/args.gn cache:kiwibrowser-next-builds-${{ matrix.platform }}/
+          rclone copy --transfers=128 --retries=10 "secondary_disk/out/android_${{ matrix.platform }}/args.gn" "cache:kiwibrowser-next-builds-${{ matrix.platform }}/"
 
-      - name: Calling buildbot
+      - name: Call buildbot
         if: false
         run: curl ipinfo.io
 
-      - name: Downloading binary objects cache to $HOME/cache
+      - name: Download binary objects cache to $HOME/cache
         run: |
-          rclone copy --transfers=128 --retries=10 cache:kiwibrowser-next-builds-${{ matrix.platform }}/ $HOME/kiwibrowser-next-builds-${{ matrix.platform }}
+          rclone copy --transfers=128 --retries=10 "cache:kiwibrowser-next-builds-${{ matrix.platform }}/" "${HOME}/kiwibrowser-next-builds-${{ matrix.platform }}"
 
-      - name: Transferring build to the standard Kiwi Browser run ID
+      - name: Transfer build to standard Kiwi Browser run ID
         run: |
-          rclone copy --transfers=128 --retries=10 cache:kiwibrowser-next-builds-${{ matrix.platform }}/ cache:kiwibrowser-builds/${{ github.run_id }}/${{ matrix.platform }}
+          rclone copy --transfers=128 --retries=10 "cache:kiwibrowser-next-builds-${{ matrix.platform }}/" "cache:kiwibrowser-builds/${{ github.run_id }}/${{ matrix.platform }}"
 
-      - name: Listing files
+      - name: List files
         run: |
-          echo $HOME
-          ls -la $HOME/kiwibrowser-next-builds-${{ matrix.platform }}
+          echo "${HOME}"
+          ls -la "${HOME}/kiwibrowser-next-builds-${{ matrix.platform }}"
 
-      - name: Uploading APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: apk-${{ matrix.platform }}
@@ -166,55 +162,56 @@ jobs:
     needs: build
 
     steps:
-      - name: Installing rclone
+      - name: Install rclone
         run: |
           curl --http1.1 https://rclone.org/install.sh | \
           sudo bash
     
-      - name: Creating rclone config
+      - name: Create rclone config
         run: |
-          mkdir -p $HOME/.config/rclone/
-          echo '[cache]' > $HOME/.config/rclone/rclone.conf
-          echo 'type = sftp' >> $HOME/.config/rclone/rclone.conf
-          echo 'host = ${{ secrets.STORAGE_HOST }}' >> $HOME/.config/rclone/rclone.conf
-          echo 'user = storage' >> $HOME/.config/rclone/rclone.conf
-          echo 'key_pem = ${{ secrets.STORAGE_KEY }}' >> $HOME/.config/rclone/rclone.conf
+          mkdir -p "${HOME}/.config/rclone/" && \
+          cat << EOF > "${HOME}/.config/rclone/rclone.conf"
+          [cache]
+          type = sftp
+          host = ${{ secrets.STORAGE_HOST }}
+          user = storage
+          key_pem = ${{ secrets.STORAGE_KEY }}
+          EOF
 
-
-      - name: Downloading artifact (arm)
+      - name: Download artifact (arm)
         uses: actions/download-artifact@v4
         with:
           name: apk-arm
           path: apk-arm
 
-      - name: Downloading artifact (arm64)
+      - name: Download artifact (arm64)
         uses: actions/download-artifact@v4
         with:
           name: apk-arm64
           path: apk-arm64
 
-      - name: Downloading artifact (x86)
+      - name: Download artifact (x86)
         uses: actions/download-artifact@v4
         with:
           name: apk-x86
           path: apk-x86
 
-      - name: Downloading artifact (x64)
+      - name: Download artifact (x64)
         uses: actions/download-artifact@v4
         with:
           name: apk-x64
           path: apk-x64
 
-      - name: Listing files under $HOME
+      - name: List files under $HOME
         run: |
           pwd
-          echo $HOME
-          ls -laR $HOME
+          echo "${HOME}"
+          ls -laR "${HOME}/"
 
       - name: Prepare release notes
         run: |
           cat ./apk-arm/last_commits.txt > release_notes.txt
-          cat << EOT >> release_notes.txt
+          cat << EOF >> release_notes.txt
           
           This version will replace your currently installed Kiwi Browser (${{ vars.package }}).
           If you have important data, make sure to backup them or save them before upgrading to this version.
@@ -223,7 +220,7 @@ jobs:
           
           Summary:
             - To install / update Kiwi Browser, use "${{ vars.package }}-arm64-${{ github.run_id }}-github.apk".
-            If it doesn't work, try again using "${{ vars.package }}-arm64-${{ github.run_id }}-playstore.apk" (if it exists).
+              If it doesn't work, try again using "${{ vars.package }}-arm64-${{ github.run_id }}-playstore.apk" (if it exists).
           
           Detailed information about the different files:
             - ".map" files are files that developers can use to investigate crashes (ProGuard mapping files), these files are not needed to run the browser and are for developers only.
@@ -245,14 +242,13 @@ jobs:
             - On Android, applications have to be signed by a developer before they can be installed.
           
           Kiwi has two types of builds:
+            - Signed by the developer:
+              - "-github.apk" are builds signed using the official developer key.
+                A signed build is a build that comes straight from the GitHub official repository and is always the most updated.
           
-          Signed by the developer:
-            - "-github.apk" are builds signed using the official developer key.
-          A signed build is a build that comes straight from the GitHub official repository and is always the most updated.
-          
-          Play Certified by Google:
-            - Once in a while, we send a "-github.apk" build to be reviewed and signed by Google.
-          Google reviews the application, checks that the application is not malicious, adds the "Google Play Certified" badge, signs the file and this becomes "-playstore.apk".
+            - Play Certified by Google:
+              - Once in a while, we send a "-github.apk" build to be reviewed and signed by Google.
+                Google reviews the application, checks that the application is not malicious, adds the "Google Play Certified" badge, signs the file and this becomes "-playstore.apk".
           
           We then distribute "-playstore.apk" on Google Play, XDA-Developers, Samsung and other app stores.
            
@@ -263,28 +259,28 @@ jobs:
             - You cannot install a "-playstore.apk" build on top of a "-github.apk" build.
           
           Essentially, if you downloaded Kiwi from an app store, you need to use the "-playstore.apk" files or uninstall the version of Kiwi you have and start using the "-github.apk" version.
-          EOT
+          EOF
 
-      - name: Creating release
+      - name: Create release
         id: create_release
         uses: actions/create-release@v1.1.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          owner: "kiwibrowser"
-          repo: "src.next"
+          owner: "${{ github.repository_owner }}"
+          repo: "${{ github.repository }}"
           tag_name: ${{ github.run_id }}
           release_name: Generation ${{ github.run_id }}
           draft: false
           prerelease: true
           body_path: release_notes.txt
 
-      - name: Signing and uploading release to GitHub and send to the Play Store
+      - name: Sign and upload release to GitHub and send to the Play Store
         if: ${{ github.repository_owner == 'kiwibrowser' && contains(github.event.inputs.prepareRelease, 'yes') }}
         run: |
           curl 'https://${{ secrets.RELEASE_HOST }}/?run_id=${{ github.run_id }}&dk=${{ secrets.DEPLOY_KEY }}&publish=1&target=aab'
 
-      - name: Downloading artifacts from storage
+      - name: Download artifacts from storage
         if: ${{ github.repository_owner == 'kiwibrowser' }}
         run: |
           rclone copy --transfers=128 --retries=100 cache:kiwibrowser-builds/${{ github.run_id }}/arm/ ./apk-arm 
@@ -292,7 +288,7 @@ jobs:
           rclone copy --transfers=128 --retries=100 cache:kiwibrowser-builds/${{ github.run_id }}/x86/ ./apk-x86
           rclone copy --transfers=128 --retries=100 cache:kiwibrowser-builds/${{ github.run_id }}/x64/ ./apk-x64
 
-      - name: Uploading release asset (arm-signed)
+      - name: Upload release asset (arm-signed)
         if: ${{ github.repository_owner == 'kiwibrowser' }}
         uses: actions/upload-release-asset@v1
         env:
@@ -303,7 +299,7 @@ jobs:
           asset_name: ${{ vars.package }}-arm-${{ github.run_id }}-github.apk
           asset_content_type: application/vnd.android.package-archive
 
-      - name: Uploading release asset (arm64-signed)
+      - name: Upload release asset (arm64-signed)
         if: ${{ github.repository_owner == 'kiwibrowser' }}
         uses: actions/upload-release-asset@v1
         env:
@@ -314,7 +310,7 @@ jobs:
           asset_name: ${{ vars.package }}-arm64-${{ github.run_id }}-github.apk
           asset_content_type: application/vnd.android.package-archive
 
-      - name: Uploading release asset (x86-signed)
+      - name: Upload release asset (x86-signed)
         if: ${{ github.repository_owner == 'kiwibrowser' }}
         uses: actions/upload-release-asset@v1
         env:
@@ -325,7 +321,7 @@ jobs:
           asset_name: ${{ vars.package }}-x86-${{ github.run_id }}-github.apk
           asset_content_type: application/vnd.android.package-archive
 
-      - name: Uploading release asset (x64-signed)
+      - name: Upload release asset (x64-signed)
         if: ${{ github.repository_owner == 'kiwibrowser' }}
         uses: actions/upload-release-asset@v1
         env:
@@ -336,7 +332,7 @@ jobs:
           asset_name: ${{ vars.package }}-x64-${{ github.run_id }}-github.apk
           asset_content_type: application/vnd.android.package-archive
 
-      - name: Uploading dev asset (arm-signed)
+      - name: Upload dev asset (arm-signed)
         if: ${{ github.repository_owner == 'kiwibrowser' }}
         uses: actions/upload-release-asset@v1
         env:
@@ -347,7 +343,7 @@ jobs:
           asset_name: ${{ vars.package_dev }}-arm-${{ github.run_id }}-github.apk
           asset_content_type: application/vnd.android.package-archive
 
-      - name: Uploading dev asset (arm64-signed)
+      - name: Upload dev asset (arm64-signed)
         if: ${{ github.repository_owner == 'kiwibrowser' }}
         uses: actions/upload-release-asset@v1
         env:
@@ -358,7 +354,7 @@ jobs:
           asset_name: ${{ vars.package_dev }}-arm64-${{ github.run_id }}-github.apk
           asset_content_type: application/vnd.android.package-archive
 
-      - name: Uploading dev asset (x86-signed)
+      - name: Upload dev asset (x86-signed)
         if: ${{ github.repository_owner == 'kiwibrowser' }}
         uses: actions/upload-release-asset@v1
         env:
@@ -369,7 +365,7 @@ jobs:
           asset_name: ${{ vars.package_dev }}-x86-${{ github.run_id }}-github.apk
           asset_content_type: application/vnd.android.package-archive
 
-      - name: Uploading dev asset (x64-signed)
+      - name: Upload dev asset (x64-signed)
         if: ${{ github.repository_owner == 'kiwibrowser' }}
         uses: actions/upload-release-asset@v1
         env:
@@ -384,18 +380,20 @@ jobs:
         continue-on-error: true
         if: contains(github.event.inputs.announceOnMessengers, 'yes')
         run: |
-          echo "" > commit_message.txt
+          : > commit_message.txt
+          echo "" >> commit_message.txt
           echo "" >> commit_message.txt
           cat ./apk-arm/last_commits.txt >> commit_message.txt
           echo "" >> commit_message.txt
           COMMIT_MSG=$( < ./commit_message.txt )
           PAYLOAD=$( jq -n \
             --arg username "Kiwi Builder (Next)" \
-            --arg content "A new build of Kiwi Browser Next (preview version) is available. This version will replace your currently installed Kiwi Browser (${{ vars.package }}) <@&913196471787065344> - ${{ vars.baseurl }}/releases/tag/${{ github.run_id }} $COMMIT_MSG" \
+            --arg content "A new build of Kiwi Browser (preview version) is available. This version will replace your currently installed Kiwi Browser (${{ vars.package }}) <@&913196471787065344> - ${{ vars.baseurl }}/releases/tag/${{ github.run_id }} $COMMIT_MSG" \
             '{ username: $username, content: $content }'
           )
           curl -H 'Content-Type: application/json' -X POST -d "$PAYLOAD" ${{ secrets.DISCORD_WEBHOOK }}
-      
+
+      # depends on above to have created commit_message.txt
       - name: Send announcement on Telegram
         continue-on-error: true
         if: contains(github.event.inputs.announceOnMessengers, 'yes')
@@ -409,4 +407,3 @@ jobs:
             '{ text: $text, chat_id: $chat_id, parse_mode: $parse_mode, reply_markup: $reply_markup }'
           )
           curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage
-
