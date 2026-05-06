@@ -79,11 +79,11 @@ jobs:
       - name: Create symlink
         run: |
           sudo ln -s /extended_data /mnt/secondary_disk
-          sudo ln -s /mnt/secondary_disk $GITHUB_WORKSPACE
+          sudo ln -s /mnt/secondary_disk "$GITHUB_WORKSPACE"
       # or alternatively, to work on the main partition
       #run: |
       #  sudo ln -s /extended_data /mnt/secondary_disk
-      #  sudo ln -s /mnt/secondary_disk $GITHUB_WORKSPACE
+      #  sudo ln -s /mnt/secondary_disk "$GITHUB_WORKSPACE"
 
       # We cannot checkout outside of $GITHUB_WORKSPACE, but we want to checkout to the SSD
 
