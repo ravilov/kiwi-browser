@@ -1,7 +1,11 @@
-name: 'Kiwi: Rebase on top of kiwibrowser:chromium branch'
+name: 'Kiwi: Rebase on top of "chromium" branch'
 
 on:
   workflow_dispatch:
+
+env:
+  - local: master
+  - chromium: chromium
 
 jobs:
   build:
@@ -19,33 +23,43 @@ jobs:
           git config --global user.name "Repository manager"
 
       - name: Adding kiwibrowser repository as upstream
-        run: git remote add upstream https://github.com/ravilov/kiwi.git
+        run: |
+          git remote add upstream ${{ github.repositoryUrl }}
 
       - name: Fetching kiwibrowser repository
-        run: git fetch upstream
+        run: |
+          git fetch upstream
 
       - name: Switching to Chromium
-        run: git checkout origin/chromium
+        run: |
+          git checkout origin/chromium
 
       - name: Rebasing on top of kiwibrowser Chromium
-        run: git rebase upstream/chromium --committer-date-is-author-date
+        run: |
+          git rebase upstream/chromium --committer-date-is-author-date
 
       - name: Pushing Chromium branch
-        run: git push origin origin/chromium HEAD:chromium --force
+        run: |
+          git push origin origin/chromium HEAD:chromium --force
 
       - name: Fetching Kiwi branch
-        run: git fetch origin master
+        run: |
+          git fetch origin ${{ env.local }}
 
       - name: Switching to Kiwi
-        run: git checkout origin/master
+        run: |
+          git checkout origin/master
 
       - name: Rebasing on top of kiwibrowser:Chromium
-        run: git rebase upstream/chromium --committer-date-is-author-date
+        run: |
+          git rebase upstream/chromium --committer-date-is-author-date
 
       - name: Preparing new branch
-        run: git checkout -b master-new
+        run: |
+          git checkout -b ${{ env.local }}-new
 
       # This is done on purpose
       # See: https://redfin.engineering/git-rebasing-public-branches-works-much-better-than-youd-think-ecc9a115aea9
-      - name: Pushing Kiwi branch
-        run: git push origin new_kiwi:kiwi --force
+      - name: Pushing new branch
+        run: |
+          git push origin ${{ env.local }}-new:${{ env.local }} --force
