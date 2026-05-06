@@ -46,8 +46,8 @@ jobs:
       - name: Install rclone
         run: |
           sudo -v && \
-            wget -q "https://downloads.rclone.org/v1.63.1/rclone-v1.63.1-linux-amd64.deb" -O rclone.deb && \
-            sudo dpkg -i rclone.deb
+          wget -q "https://downloads.rclone.org/v1.63.1/rclone-v1.63.1-linux-amd64.deb" -O rclone.deb && \
+          sudo dpkg -i rclone.deb
 
       - name: Install support packages
         run: |
@@ -107,9 +107,9 @@ jobs:
 
       - name: Copy args.gn to target path
         run: |
-          cat .build/android_arm/args.gn | \
-            sed -e "s@\\(target_cpu\\) = \"[^\"]\\+\"@\\1 = \"${{ matrix.platform }}\"@g" | \
-            sed -e "s@\\(android_default_version_name\\) = \"[^\"]\\+\"@\\1 = \"Git$( date '+%y%m%d' )Gen${{ github.run_id }}\"@g" \
+          sed -e "s@\\(target_cpu\\) = \"[^\"]\\+\"@\\1 = \"${{ matrix.platform }}\"@g" \
+            < .build/android_arm/args.gn | \
+          sed -e "s@\\(android_default_version_name\\) = \"[^\"]\\+\"@\\1 = \"Git$( date '+%y%m%d' )Gen${{ github.run_id }}\"@g" \
             > "secondary_disk/out/android_${{ matrix.platform }}/args.gn"
 
       - name: Create rclone config
@@ -126,25 +126,25 @@ jobs:
       - name: Modify args.gn for 'arm' (version = *1)
         if: matrix.platform == 'arm'
         run: |
-          sed -i "s@\\(android_default_version_code\\) = \"[^\"]\\+\"@\\1 = \"$( date '+%y%m%d' )1\"@g" \
+          sed -i -e "s@\\(android_default_version_code\\) = \"[^\"]\\+\"@\\1 = \"$( date '+%y%m%d' )1\"@g" \
             secondary_disk/out/android_${{ matrix.platform }}/args.gn
 
       - name: Modify args.gn for 'arm64' (version = *2)
         if: matrix.platform == 'arm64'
         run: |
-          sed -i "s@\\(android_default_version_code\\) = \"[^\"]\\+\"@\\1 = \"$( date '+%y%m%d' )2\"@g" \
+          sed -i -e "s@\\(android_default_version_code\\) = \"[^\"]\\+\"@\\1 = \"$( date '+%y%m%d' )2\"@g" \
             secondary_disk/out/android_${{ matrix.platform }}/args.gn
 
       - name: Modify args.gn for 'x86' (version = *3)
         if: matrix.platform == 'x86'
         run: |
-          sed -i "s@\\(android_default_version_code\\) = \"[^\"]\\+\"@\\1 = \"$( date '+%y%m%d' )3\"@g" \
+          sed -i -e "s@\\(android_default_version_code\\) = \"[^\"]\\+\"@\\1 = \"$( date '+%y%m%d' )3\"@g" \
             secondary_disk/out/android_${{ matrix.platform }}/args.gn
 
       - name: Modify args.gn for 'x64' (version = *4)
         if: matrix.platform == 'x64'
         run: |
-          sed -i "s@\\(android_default_version_code\\) = \"[^\"]\\+\"@\\1 = \"$( date '+%y%m%d' )4\"@g" \
+          sed -i -e "s@\\(android_default_version_code\\) = \"[^\"]\\+\"@\\1 = \"$( date '+%y%m%d' )4\"@g" \
             secondary_disk/out/android_${{ matrix.platform }}/args.gn
 
       - name: Display args.gn
