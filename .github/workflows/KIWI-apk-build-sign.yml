@@ -1,5 +1,5 @@
 # Build APKs for Kiwi Browser Next
-name: 'Kiwi: Build and sign release apk'
+name: 'Kiwi: Build and sign release APK'
 
 # Controls when the action will run. Triggers the workflow on push or pull request events
 on:
@@ -12,7 +12,7 @@ on:
       announceOnMessengers:
         description: 'Announce new release on Discord and Telegram channels'     
         required: true
-        default: 'yes'
+        default: 'no'
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -24,7 +24,7 @@ jobs:
       fail-fast: false
       max-parallel: 4
       matrix:
-        platform: [arm, arm64, x86, x64]
+        platform: [ arm, arm64 ]
 
     # The GitHub Actions machines have a "slow disk", and a SSD "fast" disk.
     # However, there is not enough space to do all the processing on the SSD.
@@ -39,16 +39,22 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - name: Initializing build
-        run: echo Initializing build for platform ${{ matrix.platform }}
+        run: |
+          echo Initializing build for platform ${{ matrix.platform }}
 
       - name: Updating APT repository
-        run: sudo apt-get update
+        run: |
+          sudo apt-get update
 
       - name: Installing rclone
-        run: sudo -v ; wget https://downloads.rclone.org/v1.63.1/rclone-v1.63.1-linux-amd64.deb && sudo dpkg -i rclone-v1.63.1-linux-amd64.deb
+        run: |
+          sudo -v && \
+          wget https://downloads.rclone.org/v1.63.1/rclone-v1.63.1-linux-amd64.deb && \
+          sudo dpkg -i rclone-v1.63.1-linux-amd64.deb
 
       - name: Installing Python and OpenJDK
-        run: sudo apt-get install -y 2to3 python3-minimal python3 dh-python python-is-python3 openjdk-8-jdk-headless ccache jq
+        run: |
+          sudo apt-get install -y 2to3 python3-minimal python3 dh-python python-is-python3 openjdk-8-jdk-headless ccache jq
 
       - name: Reclaiming disk space on / by disabling swap partition
         run: |
@@ -56,7 +62,8 @@ jobs:
           sudo rm -f /swapfile
 
       - name: Reclaiming disk space on / by removing .NET framework
-        run: sudo rm -rf /usr/share/dotnet
+        run: |
+          sudo rm -rf /usr/share/dotnet
 
       - name: Checking-out source-code in $GITHUB_WORKSPACE
         uses: actions/checkout@v2
@@ -80,13 +87,18 @@ jobs:
       # We cannot checkout outside of $GITHUB_WORKSPACE, but we want to checkout to the SSD
 
       - name: Creating output folder
-        run: mkdir -p secondary_disk/out/android_${{ matrix.platform }}
+        run: |
+          mkdir -p secondary_disk/out/android_${{ matrix.platform }}
 
       - name: Generating one-time APK signature key
-        run: keytool -genkey -v -keystore keystore.jks -alias dev -keyalg RSA -keysize 2048 -validity 10000 -storepass public_password -keypass public_password -dname "cn=Kiwi Browser (unverified), ou=Actions, o=Kiwi Browser, c=GitHub"
+        run: |
+          keytool -genkey -v -keystore keystore.jks -alias dev -keyalg RSA -keysize 2048 -validity 10000 -storepass public_password -keypass public_password -dname "cn=Kiwi Browser (unverified), ou=Actions, o=Kiwi Browser, c=GitHub"
 
       - name: Copying args.gn to target folder
-        run: cat .build/android_arm/args.gn | sed "s#target_cpu = \"arm\"#target_cpu = \"${{ matrix.platform }}\"#" | sed "s#android_default_version_name = \"Git\"#android_default_version_name = \"Git$(date '+%y%m%d')Gen${{ github.run_id }}\"#" > secondary_disk/out/android_${{ matrix.platform }}/args.gn
+        run: |
+          cat .build/android_arm/args.gn | \
+          sed -e "s#target_cpu = \"arm\"#target_cpu = \"${{ matrix.platform }}\"#" | \
+          sed -e "s#android_default_version_name = \"Git\"#android_default_version_name = \"Git$(date '+%y%m%d')Gen${{ github.run_id }}\"#" > secondary_disk/out/android_${{ matrix.platform }}/args.gn
 
       - name: Creating rclone config
         run: |
@@ -99,38 +111,47 @@ jobs:
 
       - name: Modifying args.gn (arm)
         if: matrix.platform == 'arm'
-        run: sed -i "s#android_default_version_code = \"1\"#android_default_version_code = \"$(date '+%y%m%d')1\"#" secondary_disk/out/android_${{ matrix.platform }}/args.gn
+        run: |
+          sed -i "s#android_default_version_code = \"1\"#android_default_version_code = \"$(date '+%y%m%d')1\"#" secondary_disk/out/android_${{ matrix.platform }}/args.gn
 
       - name: Modifying args.gn (arm64)
         if: matrix.platform == 'arm64'
-        run: sed -i "s#android_default_version_code = \"1\"#android_default_version_code = \"$(date '+%y%m%d')2\"#" secondary_disk/out/android_${{ matrix.platform }}/args.gn
+        run: |
+          sed -i "s#android_default_version_code = \"1\"#android_default_version_code = \"$(date '+%y%m%d')2\"#" secondary_disk/out/android_${{ matrix.platform }}/args.gn
 
       - name: Modifying args.gn (x86)
         if: matrix.platform == 'x86'
-        run: sed -i "s#android_default_version_code = \"1\"#android_default_version_code = \"$(date '+%y%m%d')3\"#" secondary_disk/out/android_${{ matrix.platform }}/args.gn
+        run: |
+          sed -i "s#android_default_version_code = \"1\"#android_default_version_code = \"$(date '+%y%m%d')3\"#" secondary_disk/out/android_${{ matrix.platform }}/args.gn
 
       - name: Modifying args.gn (x64)
         if: matrix.platform == 'x64'
-        run: sed -i "s#android_default_version_code = \"1\"#android_default_version_code = \"$(date '+%y%m%d')4\"#" secondary_disk/out/android_${{ matrix.platform }}/args.gn
+        run: |
+          sed -i "s#android_default_version_code = \"1\"#android_default_version_code = \"$(date '+%y%m%d')4\"#" secondary_disk/out/android_${{ matrix.platform }}/args.gn
 
       - name: Displaying args.gn
-        run: cat secondary_disk/out/android_${{ matrix.platform }}/args.gn
+        run: |
+          cat secondary_disk/out/android_${{ matrix.platform }}/args.gn
 
       - name: Checking available disk-space
-        run: df -h
+        run: |
+          df -h
 
       - name: Uploading args.gn
-        run: rclone copy --transfers=128 --retries=10 secondary_disk/out/android_${{ matrix.platform }}/args.gn cache:kiwibrowser-next-builds-${{ matrix.platform }}/
+        run: |
+          rclone copy --transfers=128 --retries=10 secondary_disk/out/android_${{ matrix.platform }}/args.gn cache:kiwibrowser-next-builds-${{ matrix.platform }}/
 
       - name: Calling buildbot
         if: false
         run: curl ipinfo.io
 
       - name: Downloading binary objects cache to $HOME/cache
-        run: rclone copy --transfers=128 --retries=10 cache:kiwibrowser-next-builds-${{ matrix.platform }}/ $HOME/kiwibrowser-next-builds-${{ matrix.platform }}
+        run: |
+          rclone copy --transfers=128 --retries=10 cache:kiwibrowser-next-builds-${{ matrix.platform }}/ $HOME/kiwibrowser-next-builds-${{ matrix.platform }}
 
       - name: Transferring build to the standard Kiwi Browser run ID
-        run: rclone copy --transfers=128 --retries=10 cache:kiwibrowser-next-builds-${{ matrix.platform }}/ cache:kiwibrowser-builds/${{ github.run_id }}/${{ matrix.platform }}
+        run: |
+          rclone copy --transfers=128 --retries=10 cache:kiwibrowser-next-builds-${{ matrix.platform }}/ cache:kiwibrowser-builds/${{ github.run_id }}/${{ matrix.platform }}
 
       - name: Listing files
         run: |
@@ -149,7 +170,9 @@ jobs:
 
     steps:
       - name: Installing rclone
-        run: curl --http1.1 https://rclone.org/install.sh | sudo bash
+        run: |
+          curl --http1.1 https://rclone.org/install.sh | \
+          sudo bash
     
       - name: Creating rclone config
         run: |
@@ -194,16 +217,16 @@ jobs:
       - name: Prepare release notes
         run: |
           cat ./apk-arm/last_commits.txt > release_notes.txt
-          cat <<EOT >> release_notes.txt
+          cat << EOT >> release_notes.txt
           
-          This version will replace your currently installed Kiwi Browser (com.kiwibrowser.browser).
+          This version will replace your currently installed Kiwi Browser (${{ vars.package }}).
           If you have important data, make sure to backup them or save them before upgrading to this version.
           
           This release was automatically generated from GitHub ${{ github.ref }} in run ID ${{ github.run_id }}.
           
           Summary:
-            - To install / update Kiwi Browser, use "com.kiwibrowser.browser-arm64-${{ github.run_id }}-github.apk".
-            If it doesn't work, try again using "com.kiwibrowser.browser-arm64-${{ github.run_id }}-playstore.apk" (if it exists).
+            - To install / update Kiwi Browser, use "${{ vars.package }}-arm64-${{ github.run_id }}-github.apk".
+            If it doesn't work, try again using "${{ vars.package }}-arm64-${{ github.run_id }}-playstore.apk" (if it exists).
           
           Detailed information about the different files:
             - ".map" files are files that developers can use to investigate crashes (ProGuard mapping files), these files are not needed to run the browser and are for developers only.
@@ -211,7 +234,7 @@ jobs:
         
           The filenames are in the form "[PACKAGE_NAME]-[ARCHITECTURE]-[BUILD_VERSION]-[SIGNATURE_TYPE].apk"
         
-          If you want to keep the Play Store version installed, and still try the GitHub edition then you can install the APKs starting with "com.kiwibrowser.browser.dev" (you will keep all your Play Store bookmarks, settings and passwords, and the GitHub edition will be installed separately).
+          If you want to keep the Play Store version installed, and still try the GitHub edition then you can install the APKs starting with "${{ vars.package_dev }}" (you will keep all your Play Store bookmarks, settings and passwords, and the GitHub edition will be installed separately).
           
           Build version:
            - Everytime a change is introduced in Kiwi Browser, a new build version is generated.
@@ -280,7 +303,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./apk-arm/ChromePublic-DevSigned.apk
-          asset_name: com.kiwibrowser.browser-arm-${{ github.run_id }}-github.apk
+          asset_name: ${{ vars.package }}-arm-${{ github.run_id }}-github.apk
           asset_content_type: application/vnd.android.package-archive
 
       - name: Uploading release asset (arm64-signed)
@@ -291,7 +314,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./apk-arm64/ChromePublic-DevSigned.apk
-          asset_name: com.kiwibrowser.browser-arm64-${{ github.run_id }}-github.apk
+          asset_name: ${{ vars.package }}-arm64-${{ github.run_id }}-github.apk
           asset_content_type: application/vnd.android.package-archive
 
       - name: Uploading release asset (x86-signed)
@@ -302,7 +325,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./apk-x86/ChromePublic-DevSigned.apk
-          asset_name: com.kiwibrowser.browser-x86-${{ github.run_id }}-github.apk
+          asset_name: ${{ vars.package }}-x86-${{ github.run_id }}-github.apk
           asset_content_type: application/vnd.android.package-archive
 
       - name: Uploading release asset (x64-signed)
@@ -313,7 +336,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./apk-x64/ChromePublic-DevSigned.apk
-          asset_name: com.kiwibrowser.browser-x64-${{ github.run_id }}-github.apk
+          asset_name: ${{ vars.package }}-x64-${{ github.run_id }}-github.apk
           asset_content_type: application/vnd.android.package-archive
 
       - name: Uploading dev asset (arm-signed)
@@ -324,7 +347,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./apk-arm/ChromePublic-Next-DevSigned.apk
-          asset_name: com.kiwibrowser.browser.dev-arm-${{ github.run_id }}-github.apk
+          asset_name: ${{ vars.package_dev }}-arm-${{ github.run_id }}-github.apk
           asset_content_type: application/vnd.android.package-archive
 
       - name: Uploading dev asset (arm64-signed)
@@ -335,7 +358,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./apk-arm64/ChromePublic-Next-DevSigned.apk
-          asset_name: com.kiwibrowser.browser.dev-arm64-${{ github.run_id }}-github.apk
+          asset_name: ${{ vars.package_dev }}-arm64-${{ github.run_id }}-github.apk
           asset_content_type: application/vnd.android.package-archive
 
       - name: Uploading dev asset (x86-signed)
@@ -346,7 +369,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./apk-x86/ChromePublic-Next-DevSigned.apk
-          asset_name: com.kiwibrowser.browser.dev-x86-${{ github.run_id }}-github.apk
+          asset_name: ${{ vars.package_dev }}-x86-${{ github.run_id }}-github.apk
           asset_content_type: application/vnd.android.package-archive
 
       - name: Uploading dev asset (x64-signed)
@@ -357,7 +380,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./apk-x64/ChromePublic-Next-DevSigned.apk
-          asset_name: com.kiwibrowser.browser.dev-x64-${{ github.run_id }}-github.apk
+          asset_name: ${{ vars.package_dev }}-x64-${{ github.run_id }}-github.apk
           asset_content_type: application/vnd.android.package-archive
 
       - name: Send announcement on Discord
@@ -368,23 +391,25 @@ jobs:
           echo "" >> commit_message.txt
           cat ./apk-arm/last_commits.txt >> commit_message.txt
           echo "" >> commit_message.txt
-          COMMIT_MSG=$(<./commit_message.txt)
-          PAYLOAD=$(jq -n \
-                      --arg username "Kiwi Builder (Next)" \
-                      --arg content "A new build of Kiwi Browser Next (preview version) is available. This version will replace your currently installed Kiwi Browser (com.kiwibrowser.browser) <@&913196471787065344> - https://github.com/kiwibrowser/src.next/releases/tag/${{ github.run_id }} $COMMIT_MSG" \
-                      '{username: $username, content: $content}')
+          COMMIT_MSG=$( < ./commit_message.txt )
+          PAYLOAD=$( jq -n \
+            --arg username "Kiwi Builder (Next)" \
+            --arg content "A new build of Kiwi Browser Next (preview version) is available. This version will replace your currently installed Kiwi Browser (${{ vars.package }}) <@&913196471787065344> - ${{ vars.baseurl }}/releases/tag/${{ github.run_id }} $COMMIT_MSG" \
+            '{ username: $username, content: $content }'
+          )
           curl -H 'Content-Type: application/json' -X POST -d "$PAYLOAD" ${{ secrets.DISCORD_WEBHOOK }}
       
       - name: Send announcement on Telegram
         continue-on-error: true
         if: contains(github.event.inputs.announceOnMessengers, 'yes')
         run: |
-          COMMIT_MSG=$(<./commit_message.txt)
-          PAYLOAD=$(jq -n \
-                      --arg text "A new build of Kiwi Browser Next (preview version) is available. Link: [${{ github.run_id }}](https://github.com/kiwibrowser/src.next/releases/tag/${{ github.run_id }}) $COMMIT_MSG" \
-                      --arg chat_id "@kiwibrowserbuilds" \
-                      --arg parse_mode "markdown" \
-                      --argjson reply_markup '{"inline_keyboard": [[{"text": "x86", "url": "https://github.com/kiwibrowser/src.next/releases/download/${{ github.run_id }}/com.kiwibrowser.browser-x86-${{ github.run_id }}-github.apk"},{"text": "x64", "url": "https://github.com/kiwibrowser/src.next/releases/download/${{ github.run_id }}/com.kiwibrowser.browser-x64-${{ github.run_id }}-github.apk"}],[{"text": "arm", "url": "https://github.com/kiwibrowser/src.next/releases/download/${{ github.run_id }}/com.kiwibrowser.browser-arm-${{ github.run_id }}-github.apk"},{"text": "arm64", "url": "https://github.com/kiwibrowser/src.next/releases/download/${{ github.run_id }}/com.kiwibrowser.browser-arm64-${{ github.run_id }}-github.apk"}],[{"text": ".DEV x86", "url": "https://github.com/kiwibrowser/src.next/releases/download/${{ github.run_id }}/com.kiwibrowser.browser.dev-x86-${{ github.run_id }}-github.apk"},{"text": ".DEV x64", "url": "https://github.com/kiwibrowser/src.next/releases/download/${{ github.run_id }}/com.kiwibrowser.browser.dev-x64-${{ github.run_id }}-github.apk"}],[{"text": ".DEV arm", "url": "https://github.com/kiwibrowser/src.next/releases/download/${{ github.run_id }}/com.kiwibrowser.browser.dev-arm-${{ github.run_id }}-github.apk"},{"text": ".DEV arm64", "url": "https://github.com/kiwibrowser/src.next/releases/download/${{ github.run_id }}/com.kiwibrowser.browser.dev-arm64-${{ github.run_id }}-github.apk"}]]}' \
-                      '{text: $text, chat_id: $chat_id, parse_mode: $parse_mode, reply_markup: $reply_markup}')
+          COMMIT_MSG=$( < ./commit_message.txt )
+          PAYLOAD=$( jq -n \
+            --arg text "A new build of Kiwi Browser Next (preview version) is available. Link: [${{ github.run_id }}](${{ vars.baseurl }}/releases/tag/${{ github.run_id }}) $COMMIT_MSG" \
+            --arg chat_id "@kiwibrowserbuilds" \
+            --arg parse_mode "markdown" \
+            --argjson reply_markup '{ "inline_keyboard": [ [ { "text": "x86", "url": "${{ vars.baseurl }}/releases/download/${{ github.run_id }}/${{ vars.package }}-x86-${{ github.run_id }}-github.apk" }, { "text": "x64", "url": "${{ vars.baseurl }}/releases/download/${{ github.run_id }}/${{ vars.package }}-x64-${{ github.run_id }}-github.apk" } ], [ { "text": "arm", "url": "${{ vars.baseurl }}/releases/download/${{ github.run_id }}/${{ vars.package }}-arm-${{ github.run_id }}-github.apk" }, { "text": "arm64", "url": "${{ vars.baseurl }}/releases/download/${{ github.run_id }}/${{ vars.package }}-arm64-${{ github.run_id }}-github.apk" } ], [ { "text": ".DEV x86", "url": "${{ vars.baseurl }}/releases/download/${{ github.run_id }}/${{ vars.package_dev }}-x86-${{ github.run_id }}-github.apk" }, { "text": ".DEV x64", "url": "${{ vars.baseurl }}/releases/download/${{ github.run_id }}/${{ vars.package_dev }}-x64-${{ github.run_id }}-github.apk" } ], [ { "text": ".DEV arm", "url": "${{ vars.baseurl }}/releases/download/${{ github.run_id }}/${{ vars.package_dev }}-arm-${{ github.run_id }}-github.apk" }, { "text": ".DEV arm64", "url": "${{ vars.baseurl }}/releases/download/${{ github.run_id }}/${{ vars.package_dev }}-arm64-${{ github.run_id }}-github.apk" } ] ] }' \
+            '{ text: $text, chat_id: $chat_id, parse_mode: $parse_mode, reply_markup: $reply_markup }'
+          )
           curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage
 
