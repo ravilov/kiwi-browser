@@ -1,20 +1,17 @@
-# Build APKs for Kiwi Browser Next
-name: 'Kiwi: Build and sign release APK'
+name: "KIWI: Build and sign release APK"
 
-# Controls when the action will run. Triggers the workflow on push or pull request events
 on:
   workflow_dispatch:
     inputs:
       prepareRelease:
-        description: 'Create a draft release in Google Play Store'     
+        description: 'Create a draft release in Google Play Store'
         required: true
         default: 'no'
       announceOnMessengers:
-        description: 'Announce new release on Discord and Telegram channels'     
+        description: 'Announce new release on Discord and Telegram channels'
         required: true
         default: 'no'
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build:
     # The type of runner that the job will run on
@@ -28,14 +25,14 @@ jobs:
 
     # The GitHub Actions machines have a "slow disk", and a SSD "fast" disk.
     # However, there is not enough space to do all the processing on the SSD.
-    
+    #
     # We refer to the disks based on their name in /dev/disk
     # /dev/disk/azure/root-part1 is / ("slow disk")
     # /dev/disk/azure/resource-part1 is a 14 GB ephemeral SSD disk mounted in /mnt
-
+    #
     # We store the source-code repository (kiwibrowser/src) on /dev/disk/azure/root-part1
     # We store cache, dependencies and output on /dev/disk/azure/resource-part1 (SSD)
-
+    #
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - name: Initializing build
