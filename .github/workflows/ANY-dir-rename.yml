@@ -3,10 +3,10 @@ name: 'Any branch: Rename directory'
 on:
   workflow_dispatch:
     inputs:
-      source_directory:
+      src:
         description: 'Source directory path'     
         required: true
-      destination_directory:
+      dest:
         description: 'Destination directory path'     
         required: true
 
@@ -15,9 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      
-      - run: ls -laR
-      
-      - run: git mv ${{ github.event.inputs.source_directory }} ${{ github.event.inputs.destination_directory }}
-      
       - uses: EndBug/add-and-commit@v5.1.0
+
+      - run: ls -laR
+      - run: git mv ${{ github.event.inputs.src }} ${{ github.event.inputs.dest }}
