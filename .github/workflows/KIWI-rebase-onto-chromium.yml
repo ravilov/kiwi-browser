@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
 
 env:
-  - local: master
-  - remote: chromium
+  local: master
+  remote: chromium
 
 jobs:
   build:
