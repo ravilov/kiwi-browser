@@ -16,6 +16,5 @@ jobs:
       - name: Git auto-commit
         uses: stefanzweifel/git-auto-commit-action@v4.11.0
         with:
-          # Commit message
           commit_message: Update translation files from Crowdin
           file_pattern: chrome/android/java/res/*/
