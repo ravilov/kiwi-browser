@@ -1,13 +1,13 @@
-name: 'ANY BRANCH: rename directory'
+name: "ANY BRANCH: rename directory"
 
 on:
   workflow_dispatch:
     inputs:
       src:
-        description: 'Source directory path'     
+        description: "Source path"
         required: true
       dest:
-        description: 'Destination directory path'     
+        description: "Destination path"
         required: true
 
 jobs:
