@@ -1,15 +1,14 @@
-name: 'Kiwi: Rebase on top of "chromium" branch'
+name: "KIWI: rebase on top of 'chromium' branch"
 
 on:
   workflow_dispatch:
 
 env:
   - local: master
-  - chromium: chromium
+  - remote: chromium
 
 jobs:
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
     steps:
@@ -17,44 +16,44 @@ jobs:
         with:
           fetch-depth: 0
         
-      - name: Setting-up GitHub username
+      - name: Set up GitHub username
         run: |
           git config --global user.email "github@actions"
           git config --global user.name "Repository manager"
 
-      - name: Adding kiwibrowser repository as upstream
+      - name: Add Kiwi repo as upstream
         run: |
           git remote add upstream ${{ github.repositoryUrl }}
 
-      - name: Fetching kiwibrowser repository
+      - name: Fetch Kiwi repo
         run: |
           git fetch upstream
 
-      - name: Switching to Chromium
+      - name: Switch to Chromium
         run: |
-          git checkout origin/chromium
+          git checkout origin/${{ env.remote }}
 
-      - name: Rebasing on top of kiwibrowser Chromium
+      - name: Rebase on top of Kiwi Chromium
         run: |
-          git rebase upstream/chromium --committer-date-is-author-date
+          git rebase upstream/${{ env.remote }} --committer-date-is-author-date
 
-      - name: Pushing Chromium branch
+      - name: Push Chromium branch
         run: |
-          git push origin origin/chromium HEAD:chromium --force
+          git push origin origin/${{ env.remote }} HEAD:${{ env.remote }} --force
 
-      - name: Fetching Kiwi branch
+      - name: Fetch Kiwi branch
         run: |
           git fetch origin ${{ env.local }}
 
-      - name: Switching to Kiwi
+      - name: Switch to Kiwi
         run: |
-          git checkout origin/master
+          git checkout origin/${{ env.local }}
 
-      - name: Rebasing on top of kiwibrowser:Chromium
+      - name: Rebase on top of kiwi:chromium
         run: |
-          git rebase upstream/chromium --committer-date-is-author-date
+          git rebase upstream/${{ env.remote }} --committer-date-is-author-date
 
-      - name: Preparing new branch
+      - name: Prepare new branch
         run: |
           git checkout -b ${{ env.local }}-new
 
