@@ -11,10 +11,10 @@ on:
         default: ''
 
 env:
-  - CHROMIUM_MAJOR:
-  - CHROMIUM_MINOR:
-  - CHROMIUM_BUILD:
-  - CHROMIUM_PATCH:
+  CHROMIUM_MAJOR:
+  CHROMIUM_MINOR:
+  CHROMIUM_BUILD:
+  CHROMIUM_PATCH:
 
 jobs:
   build:
@@ -28,7 +28,8 @@ jobs:
 
       # For some reasons Git thinks it is a good idea to compact the Chromium repository
       - name: Disable Git auto-packing
-        run: git config --global gc.auto 0
+        run: |
+          git config --global gc.auto 0
         
       - name: Setting-up GitHub username
         run: |
@@ -36,11 +37,12 @@ jobs:
           git config --global user.name "Repository manager"
 
       - name: Preparing local Chromium branch
-        run: git switch chromium
+        run: |
+          git switch chromium
 
       - name: Loading settings from CHROMIUM_VERSION
         run: |
-          source CHROMIUM_VERSION; export $(cut -d= -f1 CHROMIUM_VERSION | grep -vF '#')
+          source CHROMIUM_VERSION; export $( cut -d= -f1 CHROMIUM_VERSION | grep -vF '#' )
           env | grep -F CHROMIUM_ >> $GITHUB_ENV
 
       - name: Downloading file
@@ -59,7 +61,7 @@ jobs:
         run: |
           git add ${{ github.event.inputs.path }}
 
-      - name: Importing assets from adjacent folders (if it's an image)
+      - name: Importing assets from adjacent folders (for images)
         if: contains(github.event.inputs.path, 'drawable-') || contains(github.event.inputs.path, 'mipmap-')
         continue-on-error: true
         run: |
@@ -79,8 +81,7 @@ jobs:
 
       - name: Committing file(s)
         run: |
-          git commit --allow-empty -a -m '[Chromium] Importing ${{ github.event.inputs.path }} from version ${{ env.CHROMIUM_MAJOR }}.${{ env.CHROMIUM_MINOR }}.${{ env.CHROMIUM_BUILD }}.${{ env.CHROMIUM_PATCH }}'
-
+          git commit --allow-empty -a -m '[CHROMIUM] importing ${{ github.event.inputs.path }} from version ${{ env.CHROMIUM_MAJOR }}.${{ env.CHROMIUM_MINOR }}.${{ env.CHROMIUM_BUILD }}.${{ env.CHROMIUM_PATCH }}'
 
       - name: Pushing repository
         run: |
