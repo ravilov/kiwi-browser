@@ -1,19 +1,16 @@
-# Build APKs for Kiwi Browser Next
-name: 'ANY BRANCH: build APK'
+name: "ANY BRANCH: build APK"
 
-# Controls when the action will run. Triggers the workflow on pull request events or manual trigger
 on:
   pull_request:
     branches:
       - master
+      - kiwi
   workflow_dispatch:
 
 concurrency: build_test_apk
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
     steps:
@@ -64,5 +61,6 @@ jobs:
           asset_content_type: application/vnd.android.package-archive
 
       - name: Displaying download link
-        run: echo "Build can be downloaded at https://build.find.kiwi/apks/${{ github.run_id }}/out.apk"
+        run: |
+          echo "Build can be downloaded at https://build.find.kiwi/apks/${{ github.run_id }}/out.apk"
 
