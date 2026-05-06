@@ -46,12 +46,20 @@ jobs:
       - name: Install rclone
         run: |
           sudo -v && \
-          wget "https://downloads.rclone.org/v1.63.1/rclone-v1.63.1-linux-amd64.deb" && \
-          sudo dpkg -i rclone-v1.63.1-linux-amd64.deb
+            wget -q "https://downloads.rclone.org/v1.63.1/rclone-v1.63.1-linux-amd64.deb" -O rclone.deb && \
+            sudo dpkg -i rclone.deb
 
       - name: Install support packages
         run: |
-          sudo apt-get install -y 2to3 python3-minimal python3 dh-python python-is-python3 openjdk-8-jdk-headless ccache jq
+          sudo apt-get install -y \
+            2to3 \
+            python3-minimal \
+            python3 \
+            dh-python \
+            python-is-python3 \
+            openjdk-8-jdk-headless \
+            ccache \
+            jq
 
       - name: Reclaim disk space
         run: |
@@ -64,34 +72,45 @@ jobs:
 
       - name: Create secondary disk
         run: |
-          sudo mkdir -p /extended_data
-          sudo chown -R runner:docker /extended_data
+          sudo mkdir -p /extended_data/
+          sudo chown -R runner:docker /extended_data/
       
       # If you want to use only the SSD, you can use:
       - name: Create symlink
         run: |
           sudo ln -s /extended_data /mnt/secondary_disk
-          sudo ln -s /mnt/secondary_disk $GITHUB_WORKSPACE/
+          sudo ln -s /mnt/secondary_disk $GITHUB_WORKSPACE
       # or alternatively, to work on the main partition
       #run: |
       #  sudo ln -s /extended_data /mnt/secondary_disk
-      #  sudo ln -s /mnt/secondary_disk $GITHUB_WORKSPACE/
+      #  sudo ln -s /mnt/secondary_disk $GITHUB_WORKSPACE
 
       # We cannot checkout outside of $GITHUB_WORKSPACE, but we want to checkout to the SSD
 
       - name: Create output path
         run: |
-          mkdir -p secondary_disk/out/android_${{ matrix.platform }}/
+          mkdir -p "secondary_disk/out/android_${{ matrix.platform }}/"
 
       - name: Generate one-time APK signature key
         run: |
-          keytool -genkey -v -keystore keystore.jks -alias dev -keyalg RSA -keysize 2048 -validity 10000 -storepass public_password -keypass public_password -dname "cn=Kiwi Browser (unverified), ou=Actions, o=Kiwi Browser, c=GitHub"
+          keytool \
+            -genkey \
+            -v \
+            -keystore keystore.jks \
+            -alias dev \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass public_password \
+            -keypass public_password \
+            -dname "cn=Kiwi Browser (unverified), ou=Actions, o=Kiwi Browser, c=GitHub"
 
       - name: Copy args.gn to target path
         run: |
           cat .build/android_arm/args.gn | \
-          sed -e "s#target_cpu = \"arm\"#target_cpu = \"${{ matrix.platform }}\"#" | \
-          sed -e "s#android_default_version_name = \"Git\"#android_default_version_name = \"Git$(date '+%y%m%d')Gen${{ github.run_id }}\"#" > secondary_disk/out/android_${{ matrix.platform }}/args.gn
+            sed -e "s@\\(target_cpu\\) = \"[^\"]\\+\"@\\1 = \"${{ matrix.platform }}\"@g" | \
+            sed -e "s@\\(android_default_version_name\\) = \"[^\"]\\+\"@\\1 = \"Git$( date '+%y%m%d' )Gen${{ github.run_id }}\"@g" \
+            > "secondary_disk/out/android_${{ matrix.platform }}/args.gn"
 
       - name: Create rclone config
         run: |
@@ -104,29 +123,33 @@ jobs:
           key_pem = ${{ secrets.STORAGE_KEY }}
           EOF
 
-      - name: Modify args.gn for 'arm'
+      - name: Modify args.gn for 'arm' (version = *1)
         if: matrix.platform == 'arm'
         run: |
-          sed -i "s#android_default_version_code = \"1\"#android_default_version_code = \"$(date '+%y%m%d')1\"#" secondary_disk/out/android_${{ matrix.platform }}/args.gn
+          sed -i "s@\\(android_default_version_code\\) = \"[^\"]\\+\"@\\1 = \"$( date '+%y%m%d' )1\"@g" \
+            secondary_disk/out/android_${{ matrix.platform }}/args.gn
 
-      - name: Modify args.gn for 'arm64'
+      - name: Modify args.gn for 'arm64' (version = *2)
         if: matrix.platform == 'arm64'
         run: |
-          sed -i "s#android_default_version_code = \"1\"#android_default_version_code = \"$(date '+%y%m%d')2\"#" secondary_disk/out/android_${{ matrix.platform }}/args.gn
+          sed -i "s@\\(android_default_version_code\\) = \"[^\"]\\+\"@\\1 = \"$( date '+%y%m%d' )2\"@g" \
+            secondary_disk/out/android_${{ matrix.platform }}/args.gn
 
-      - name: Modify args.gn for 'x86'
+      - name: Modify args.gn for 'x86' (version = *3)
         if: matrix.platform == 'x86'
         run: |
-          sed -i "s#android_default_version_code = \"1\"#android_default_version_code = \"$(date '+%y%m%d')3\"#" secondary_disk/out/android_${{ matrix.platform }}/args.gn
+          sed -i "s@\\(android_default_version_code\\) = \"[^\"]\\+\"@\\1 = \"$( date '+%y%m%d' )3\"@g" \
+            secondary_disk/out/android_${{ matrix.platform }}/args.gn
 
-      - name: Modify args.gn for 'x64'
+      - name: Modify args.gn for 'x64' (version = *4)
         if: matrix.platform == 'x64'
         run: |
-          sed -i "s#android_default_version_code = \"1\"#android_default_version_code = \"$(date '+%y%m%d')4\"#" secondary_disk/out/android_${{ matrix.platform }}/args.gn
+          sed -i "s@\\(android_default_version_code\\) = \"[^\"]\\+\"@\\1 = \"$( date '+%y%m%d' )4\"@g" \
+            secondary_disk/out/android_${{ matrix.platform }}/args.gn
 
       - name: Display args.gn
         run: |
-          cat secondary_disk/out/android_${{ matrix.platform }}/args.gn
+          cat "secondary_disk/out/android_${{ matrix.platform }}/args.gn"
 
       - name: Check available disk-space
         run: |
@@ -134,7 +157,9 @@ jobs:
 
       - name: Upload args.gn
         run: |
-          rclone copy --transfers=128 --retries=10 "secondary_disk/out/android_${{ matrix.platform }}/args.gn" "cache:kiwibrowser-next-builds-${{ matrix.platform }}/"
+          rclone copy --transfers=128 --retries=10 \
+            "secondary_disk/out/android_${{ matrix.platform }}/args.gn" \
+            "cache:kiwibrowser-next-builds-${{ matrix.platform }}/"
 
       - name: Call buildbot
         if: false
@@ -142,11 +167,15 @@ jobs:
 
       - name: Download binary objects cache to $HOME/cache
         run: |
-          rclone copy --transfers=128 --retries=10 "cache:kiwibrowser-next-builds-${{ matrix.platform }}/" "${HOME}/kiwibrowser-next-builds-${{ matrix.platform }}"
+          rclone copy --transfers=128 --retries=10 \
+            "cache:kiwibrowser-next-builds-${{ matrix.platform }}/" \
+            "${HOME}/kiwibrowser-next-builds-${{ matrix.platform }}"
 
       - name: Transfer build to standard Kiwi Browser run ID
         run: |
-          rclone copy --transfers=128 --retries=10 "cache:kiwibrowser-next-builds-${{ matrix.platform }}/" "cache:kiwibrowser-builds/${{ github.run_id }}/${{ matrix.platform }}"
+          rclone copy --transfers=128 --retries=10 \
+            "cache:kiwibrowser-next-builds-${{ matrix.platform }}/" \
+            "cache:kiwibrowser-builds/${{ github.run_id }}/${{ matrix.platform }}"
 
       - name: List files
         run: |
@@ -222,15 +251,19 @@ jobs:
           
           Summary:
             - To install / update Kiwi Browser, use "${{ vars.package }}-arm64-${{ github.run_id }}-github.apk".
-              If it doesn't work, try again using "${{ vars.package }}-arm64-${{ github.run_id }}-playstore.apk" (if it exists).
+              If it doesn't work, try again using "${{ vars.package }}-arm64-${{ github.run_id }}-playstore.apk"
+              (if it exists).
           
           Detailed information about the different files:
-            - ".map" files are files that developers can use to investigate crashes (ProGuard mapping files), these files are not needed to run the browser and are for developers only.
+            - ".map" files are files that developers can use to investigate crashes (ProGuard mapping files),
+              these files are not needed to run the browser and are for developers only.
             - ".apk" files are packages that you have to install to use Kiwi Browser.
         
           The filenames are in the form "[PACKAGE_NAME]-[ARCHITECTURE]-[BUILD_VERSION]-[SIGNATURE_TYPE].apk"
         
-          If you want to keep the Play Store version installed, and still try the GitHub edition then you can install the APKs starting with "${{ vars.package_dev }}" (you will keep all your Play Store bookmarks, settings and passwords, and the GitHub edition will be installed separately).
+          If you want to keep the Play Store version installed, and still try the GitHub edition then you can install
+          the APKs starting with "${{ vars.package_dev }}" (you will keep all your Play Store bookmarks, settings and
+          passwords, and the GitHub edition will be installed separately).
           
           Build version:
            - Everytime a change is introduced in Kiwi Browser, a new build version is generated.
@@ -246,21 +279,27 @@ jobs:
           Kiwi has two types of builds:
             - Signed by the developer:
               - "-github.apk" are builds signed using the official developer key.
-                A signed build is a build that comes straight from the GitHub official repository and is always the most updated.
+                A signed build is a build that comes straight from the GitHub official repository and is always
+                the most updated.
           
             - Play Certified by Google:
               - Once in a while, we send a "-github.apk" build to be reviewed and signed by Google.
-                Google reviews the application, checks that the application is not malicious, adds the "Google Play Certified" badge, signs the file and this becomes "-playstore.apk".
+                Google reviews the application, checks that the application is not malicious, adds the "Google Play
+                Certified" badge, signs the file and this becomes "-playstore.apk".
           
           We then distribute "-playstore.apk" on Google Play, XDA-Developers, Samsung and other app stores.
            
           This process takes some time and is partially manual so not all GitHub builds have a "-playstore.apk".
           
-          On Android, you can install an update to an application only if it was signed by the same developer as the version that you currently have installed:
-            - You can install a "-github.apk" build on top of a "-github.apk" build, and a "-playstore.apk" build on top of a "-playstore.apk" build.
+          On Android, you can install an update to an application only if it was signed by the same developer as
+          the version that you currently have installed:
+            - You can install a "-github.apk" build on top of a "-github.apk" build, and a "-playstore.apk" build
+              on top of a "-playstore.apk" build.
             - You cannot install a "-playstore.apk" build on top of a "-github.apk" build.
           
-          Essentially, if you downloaded Kiwi from an app store, you need to use the "-playstore.apk" files or uninstall the version of Kiwi you have and start using the "-github.apk" version.
+          Essentially, if you downloaded Kiwi from an app store, you need to use the "-playstore.apk" files or uninstall
+          the version of Kiwi you have and start using the "-github.apk" version.
+
           EOF
 
       - name: Create release
@@ -285,10 +324,18 @@ jobs:
       - name: Download artifacts from storage
         if: ${{ github.repository_owner == 'kiwibrowser' }}
         run: |
-          rclone copy --transfers=128 --retries=100 cache:kiwibrowser-builds/${{ github.run_id }}/arm/ ./apk-arm 
-          rclone copy --transfers=128 --retries=100 cache:kiwibrowser-builds/${{ github.run_id }}/arm64/ ./apk-arm64
-          rclone copy --transfers=128 --retries=100 cache:kiwibrowser-builds/${{ github.run_id }}/x86/ ./apk-x86
-          rclone copy --transfers=128 --retries=100 cache:kiwibrowser-builds/${{ github.run_id }}/x64/ ./apk-x64
+          rclone copy --transfers=128 --retries=100 \
+            cache:kiwibrowser-builds/${{ github.run_id }}/arm/ \
+            ./apk-arm 
+          rclone copy --transfers=128 --retries=100 \
+            cache:kiwibrowser-builds/${{ github.run_id }}/arm64/ \
+            ./apk-arm64
+          rclone copy --transfers=128 --retries=100 \
+            cache:kiwibrowser-builds/${{ github.run_id }}/x86/ \
+            ./apk-x86
+          rclone copy --transfers=128 --retries=100 \
+            cache:kiwibrowser-builds/${{ github.run_id }}/x64/ \
+            ./apk-x64
 
       - name: Upload release asset (arm-signed)
         if: ${{ github.repository_owner == 'kiwibrowser' }}
