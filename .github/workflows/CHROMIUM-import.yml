@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       path:
-        description: 'Path in Chromium repository'     
+        description: "Path in Chromium repository"
         required: true
-        default: ''
+        default: ""
 
 env:
   CHROMIUM_MAJOR:
@@ -30,58 +30,60 @@ jobs:
         run: |
           git config --global gc.auto 0
         
-      - name: Setting-up GitHub username
+      - name: Set up GitHub username
         run: |
           git config --global user.email "github@actions"
           git config --global user.name "Repository manager"
 
-      - name: Preparing local Chromium branch
+      - name: Prepare local Chromium branch
         run: |
           git switch chromium
 
-      - name: Loading settings from CHROMIUM_VERSION
+      - name: Load settings from CHROMIUM_VERSION
         run: |
           source CHROMIUM_VERSION; export $( cut -d= -f1 CHROMIUM_VERSION | grep -vF '#' )
           env | grep -F CHROMIUM_ >> $GITHUB_ENV
 
-      - name: Downloading file
+      - name: Download file
         run: |
           wget "https://chromium.googlesource.com/chromium/src/+/refs/tags/${{ env.CHROMIUM_MAJOR }}.${{ env.CHROMIUM_MINOR }}.${{ env.CHROMIUM_BUILD }}.${{ env.CHROMIUM_PATCH }}/${{ github.event.inputs.path }}?format=TEXT" -O /tmp/file.txt
 
-      - name: Creating folder where the file is stored
+      - name: Create target folder
         run: |
-          mkdir -p "$(dirname '${{ github.event.inputs.path }}')"
+          mkdir -p "$( dirname '${{ github.event.inputs.path }}' )"
 
-      - name: Decoding file
+      - name: Decode file
         run: |
           cat /tmp/file.txt | base64 --decode > ${{ github.event.inputs.path }}
 
-      - name: Adding file to Git repository
+      - name: Add file to repo
         run: |
           git add ${{ github.event.inputs.path }}
 
-      - name: Importing assets from adjacent folders (for images)
+      - name: Import related image assets
         if: contains(github.event.inputs.path, 'drawable-') || contains(github.event.inputs.path, 'mipmap-')
         continue-on-error: true
         run: |
-          for image_folder in drawable mipmap
+          tmpfile="/tmp/file.txt"
+          for dir in drawable mipmap
           do
-            for resolution_folder in mdpi hdpi xhdpi xxhdpi xxxhdpi
+            for res in mdpi hdpi xhdpi xxhdpi xxxhdpi
             do
-              echo Processing ${image_folder}-${resolution_folder}
-              adjacent_target_file=$(echo ${{ github.event.inputs.path }} | sed -E "s#(\-mdpi|\-hdpi|\-xhdpi|\-xxhdpi|\-xxxhdpi)/#-${resolution_folder}/#g")
-              rm -f /tmp/file.txt
-              wget "https://chromium.googlesource.com/chromium/src/+/refs/tags/${{ env.CHROMIUM_MAJOR }}.${{ env.CHROMIUM_MINOR }}.${{ env.CHROMIUM_BUILD }}.${{ env.CHROMIUM_PATCH }}/${adjacent_target_file}?format=TEXT" -O /tmp/file.txt && \
-              mkdir -p "$( dirname "${adjacent_target_file}" )" && \
-              cat /tmp/file.txt | base64 --decode > "${adjacent_target_file}" && \
-              git add "${adjacent_target_file}"
+              echo "Processing ${dir}-${res}"
+              target="$( echo ${{ github.event.inputs.path }} | sed -E -e "s!(-mdpi|-hdpi|-xhdpi|-xxhdpi|-xxxhdpi)/!-${res}/!g")"
+              rm -f "${tmpfile}"
+              wget "https://chromium.googlesource.com/chromium/src/+/refs/tags/${{ env.CHROMIUM_MAJOR }}.${{ env.CHROMIUM_MINOR }}.${{ env.CHROMIUM_BUILD }}.${{ env.CHROMIUM_PATCH }}/${target}?format=TEXT" -O "${tmpfile}" && \
+              mkdir -p "$( dirname "${target}" )/" && \
+              cat "${tmpfile}" | base64 --decode > "${target}" && \
+              git add "${target}"
             done
           done
 
-      - name: Committing files
+      - name: Commit files
         run: |
-          git commit --allow-empty -a -m '[CHROMIUM] importing ${{ github.event.inputs.path }} from version ${{ env.CHROMIUM_MAJOR }}.${{ env.CHROMIUM_MINOR }}.${{ env.CHROMIUM_BUILD }}.${{ env.CHROMIUM_PATCH }}'
+          git commit --allow-empty -a -m \
+            '[CHROMIUM] import ${{ github.event.inputs.path }} from version ${{ env.CHROMIUM_MAJOR }}.${{ env.CHROMIUM_MINOR }}.${{ env.CHROMIUM_BUILD }}.${{ env.CHROMIUM_PATCH }}'
 
-      - name: Pushing repository
+      - name: Push to repo
         run: |
           git push origin chromium
