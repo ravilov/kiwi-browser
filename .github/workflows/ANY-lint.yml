@@ -2,9 +2,14 @@ name: "ANY BRANCH: lint codebase"
 
 on:
   push:
-    branches: [ master, kiwi ]
+    branches:
+      - master
+      - kiwi
+
   pull_request:
-    branches: [ master, kiwi ]
+    branches:
+      - master
+      - kiwi
 
 jobs:
   build:
