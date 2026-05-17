@@ -28,6 +28,7 @@ env:
   CHROMIUM_MINOR:
   CHROMIUM_BUILD:
   CHROMIUM_PATCH:
+  verfile: CHROMIUM_VERSION
   filelist: /tmp/source_files.txt
   tmpdir: /tmp/chromium_new
 
@@ -60,10 +61,10 @@ jobs:
 
       - name: Load settings from CHROMIUM_VERSION
         run: |
-          if [ -r "CHROMIUM_VERSION" ]
+          if [ -r "${{ env.verfile }}" ]
           then
-            source CHROMIUM_VERSION
-            export $( cut -d= -f1 CHROMIUM_VERSION | grep -vF '#' )
+            source "${{ env.verfile }}"
+            export $( cut -d= -f1 "${{ env.verfile }}" | grep -vF '#' )
             env | grep -F "CHROMIUM_" >> $GITHUB_ENV
           fi
 
@@ -107,7 +108,7 @@ jobs:
             echo "CHROMIUM_MINOR=${{ github.event.inputs.NEW_CHROMIUM_MINOR }}"
             echo "CHROMIUM_BUILD=${{ github.event.inputs.NEW_CHROMIUM_BUILD }}"
             echo "CHROMIUM_PATCH=${{ github.event.inputs.NEW_CHROMIUM_PATCH }}"
-          } > CHROMIUM_VERSION
+          } > "${{ env.verfile }}"
 
       - name: Create pull request
         id: pullrequest
