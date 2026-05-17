@@ -17,5 +17,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: EndBug/add-and-commit@v5.1.0
 
-      - run: ls -laR
-      - run: git mv ${{ github.event.inputs.src }} ${{ github.event.inputs.dest }}
+      - run: |
+          ls -laR
+      - run: |
+          git mv ${{ github.event.inputs.src }} ${{ github.event.inputs.dest }}
