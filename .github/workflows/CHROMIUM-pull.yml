@@ -7,14 +7,17 @@ on:
         description: "Chromium major version:"
         required: true
         default: '93'
+
       NEW_CHROMIUM_MINOR:
         description: "Chromium minor version:"
         required: true
         default: '0'
+
       NEW_CHROMIUM_BUILD:
         description: "Chromium build version:"
         required: true
         default: '4577'
+
       NEW_CHROMIUM_PATCH:
         description: "Chromium patch version:"
         required: true
