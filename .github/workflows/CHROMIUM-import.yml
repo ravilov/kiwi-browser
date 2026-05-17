@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       path:
-        description: 'Path in Chromium repository'     
+        description: "Path in Chromium repository"
         required: true
-        default: ''
+        default: ""
 
 env:
   CHROMIUM_MAJOR:
