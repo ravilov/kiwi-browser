@@ -77,7 +77,7 @@ jobs:
           } > "${{ env.filelist }}"
 
       # https://github.blog/2020-12-21-get-up-to-speed-with-partial-clone-and-shallow-clone/
-      # git clone --filter=tree:0 <url> creates a treeless clone.
+      # git clone --filter=tree:0 <url> creates a treeless clone
       #
       # these clones download all reachable commits while fetching trees and blobs on-demand
       # these clones are best for build environments where the repository will be deleted after a single build, but you still need access to commit history
