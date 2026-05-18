@@ -27,3 +27,4 @@ jobs:
       - name: Pushing changes
         run: |
           git push --force --all
+

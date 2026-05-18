@@ -2,14 +2,14 @@ name: "KIWI: Download translations from Crowdin"
 
 on:
   workflow_dispatch
-      
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2.3.4
-      
+
       - name: Downloading translations
         run: |
           php toolbox/download_translations_from_crowdin.php ${{ secrets.CROWDIN_APIKEY }}
@@ -19,3 +19,4 @@ jobs:
         with:
           commit_message: Update translation files from Crowdin
           file_pattern: chrome/android/java/res/*/
+

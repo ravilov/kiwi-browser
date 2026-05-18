@@ -74,7 +74,7 @@ jobs:
         run: |
           sudo mkdir -p /extended_data/
           sudo chown -R runner:docker /extended_data/
-      
+
       # If you want to use only the SSD, you can use:
       - name: Create symlink
         run: |
@@ -197,7 +197,7 @@ jobs:
         run: |
           curl --http1.1 https://rclone.org/install.sh | \
           sudo bash
-    
+
       - name: Create rclone config
         run: |
           mkdir -p "${HOME}/.config/rclone/" && \
@@ -243,60 +243,60 @@ jobs:
         run: |
           cat ./apk-arm/last_commits.txt > release_notes.txt
           cat << EOF >> release_notes.txt
-          
+
           This version will replace your currently installed Kiwi Browser (${{ vars.package }}).
           If you have important data, make sure to backup them or save them before upgrading to this version.
-          
+
           This release was automatically generated from GitHub ${{ github.ref }} in run ID ${{ github.run_id }}.
-          
+
           Summary:
             - To install / update Kiwi Browser, use "${{ vars.package }}-arm64-${{ github.run_id }}-github.apk".
               If it doesn't work, try again using "${{ vars.package }}-arm64-${{ github.run_id }}-playstore.apk"
               (if it exists).
-          
+
           Detailed information about the different files:
             - ".map" files are files that developers can use to investigate crashes (ProGuard mapping files),
               these files are not needed to run the browser and are for developers only.
             - ".apk" files are packages that you have to install to use Kiwi Browser.
-        
+
           The filenames are in the form "[PACKAGE_NAME]-[ARCHITECTURE]-[BUILD_VERSION]-[SIGNATURE_TYPE].apk"
-        
+
           If you want to keep the Play Store version installed, and still try the GitHub edition then you can install
           the APKs starting with "${{ vars.package_dev }}" (you will keep all your Play Store bookmarks, settings and
           passwords, and the GitHub edition will be installed separately).
-          
+
           Build version:
            - Everytime a change is introduced in Kiwi Browser, a new build version is generated.
-          
+
           Architecture:
             - "-arm64" is compatible with modern devices and offers the best performance.
             - "-arm" is compatible with almost all devices and uses less memory.
             - "-x86" and "-x64" builds are compatible with emulators and Intel compatible tablets.
-          
+
           Signature type:
             - On Android, applications have to be signed by a developer before they can be installed.
-          
+
           Kiwi has two types of builds:
             - Signed by the developer:
               - "-github.apk" are builds signed using the official developer key.
                 A signed build is a build that comes straight from the GitHub official repository and is always
                 the most updated.
-          
+
             - Play Certified by Google:
               - Once in a while, we send a "-github.apk" build to be reviewed and signed by Google.
                 Google reviews the application, checks that the application is not malicious, adds the "Google Play
                 Certified" badge, signs the file and this becomes "-playstore.apk".
-          
+
           We then distribute "-playstore.apk" on Google Play, XDA-Developers, Samsung and other app stores.
-           
+
           This process takes some time and is partially manual so not all GitHub builds have a "-playstore.apk".
-          
+
           On Android, you can install an update to an application only if it was signed by the same developer as
           the version that you currently have installed:
             - You can install a "-github.apk" build on top of a "-github.apk" build, and a "-playstore.apk" build
               on top of a "-playstore.apk" build.
             - You cannot install a "-playstore.apk" build on top of a "-github.apk" build.
-          
+
           Essentially, if you downloaded Kiwi from an app store, you need to use the "-playstore.apk" files or uninstall
           the version of Kiwi you have and start using the "-github.apk" version.
 
@@ -326,7 +326,7 @@ jobs:
         run: |
           rclone copy --transfers=128 --retries=100 \
             cache:kiwibrowser-builds/${{ github.run_id }}/arm/ \
-            ./apk-arm 
+            ./apk-arm
           rclone copy --transfers=128 --retries=100 \
             cache:kiwibrowser-builds/${{ github.run_id }}/arm64/ \
             ./apk-arm64
@@ -456,3 +456,4 @@ jobs:
             '{ text: $text, chat_id: $chat_id, parse_mode: $parse_mode, reply_markup: $reply_markup }'
           )
           curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" https://api.telegram.org/bot${{ secrets.TELEGRAM_TOKEN }}/sendMessage
+

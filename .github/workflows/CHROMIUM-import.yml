@@ -1,6 +1,6 @@
 name: "CHROMIUM: import file"
 # Import a file from Chromium, relative path to https://source.chromium.org/chromium/chromium/src
-# In case the file is in a drawable-* folder (e.g. drawable-mdpi), all the adjacent (mdpi, xhdpi, etc) assets for the same file will be imported. 
+# In case the file is in a drawable-* folder (e.g. drawable-mdpi), all the adjacent (mdpi, xhdpi, etc) assets for the same file will be imported.
 
 on:
   workflow_dispatch:
@@ -29,7 +29,7 @@ jobs:
       - name: Disable Git auto-packing
         run: |
           git config --global gc.auto 0
-        
+
       - name: Set up GitHub username
         run: |
           git config --global user.email "github@actions"
@@ -87,3 +87,4 @@ jobs:
       - name: Push to repo
         run: |
           git push origin chromium
+

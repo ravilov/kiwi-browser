@@ -11,7 +11,7 @@ on:
         required: true
       fillColor:
         description: "Edit fill/stroke color"
-        required: false 
+        required: false
       fileNameInChromium:
         description: "Chromium icon name"
         required: true
@@ -46,9 +46,10 @@ jobs:
       - name: Execute script - replace icons with new FA ones
         run: |
           bash ./toolbox/icon_update_script.sh "./node_modules/@fortawesome/fontawesome-pro/svgs/${{ github.event.inputs.iconTypeFA }}/${{ github.event.inputs.iconNameFA }}.svg" "${{ github.event.inputs.fileNameInChromium }}" "${{ github.event.inputs.fillColor }}"
-      
+
       - name: Git auto commit
         uses: stefanzweifel/git-auto-commit-action@v4.11.0
         with:
           commit_message: update ${{ github.event.inputs.fileNameInChromium }} with ${{ github.event.inputs.iconTypeFA }}/${{ github.event.inputs.iconNameFA }} icon
           file_pattern: ./*.png
+

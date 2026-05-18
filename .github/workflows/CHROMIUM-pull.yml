@@ -45,12 +45,12 @@ jobs:
       - name: Disable Git auto-packing
         run: |
           git config --global gc.auto 0
-        
+
       - name: Set up GitHub username
         run: |
           git config --global user.email "github@actions"
           git config --global user.name "Repository manager"
-          
+
       - name: Disable Git pager
         run: |
           git config --global core.pager 'cat'
@@ -75,10 +75,12 @@ jobs:
             sed 's!\./!/!g' | \
             grep -vFi '.gitignore'
           } > "${{ env.filelist }}"
-        
+
       # https://github.blog/2020-12-21-get-up-to-speed-with-partial-clone-and-shallow-clone/
       # git clone --filter=tree:0 <url> creates a treeless clone.
-      # These clones download all reachable commits while fetching trees and blobs on-demand. These clones are best for build environments where the repository will be deleted after a single build, but you still need access to commit history
+      #
+      # these clones download all reachable commits while fetching trees and blobs on-demand
+      # these clones are best for build environments where the repository will be deleted after a single build, but you still need access to commit history
       - name: Check out Chromium
         run: |
           git clone --filter=tree:0 --no-checkout https://github.com/chromium/chromium.git "${{ env.tmpdir }}/"
@@ -127,3 +129,4 @@ jobs:
         run: |
           echo "Pull request number - ${{ steps.pullrequest.outputs.pull-request-number }}"
           echo "Pull request URL - ${{ steps.pullrequest.outputs.pull-request-url }}"
+
