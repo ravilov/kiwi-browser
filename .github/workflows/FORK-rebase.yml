@@ -1,4 +1,4 @@
-name: "FORKED KIWI: rebase on top of kiwi:master branch"
+name: "FORK: rebase on top of master branch"
 
 on:
   workflow_dispatch:
