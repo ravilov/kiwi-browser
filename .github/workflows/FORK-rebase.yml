@@ -3,6 +3,8 @@ name: "FORKED KIWI: rebase on top of kiwi:master branch"
 on:
   workflow_dispatch:
 
+  pull_request:
+
 env:
   local: master
 

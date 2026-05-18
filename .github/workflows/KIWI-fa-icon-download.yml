@@ -6,15 +6,20 @@ on:
       iconNameFA:
         description: "FA icon name"
         required: true
+
       iconTypeFA:
         description: "FA icon type"
         required: true
+
       fillColor:
         description: "Edit fill/stroke color"
         required: false
+
       fileNameInChromium:
         description: "Chromium icon name"
         required: true
+
+  pull_request:
 
 jobs:
   build:

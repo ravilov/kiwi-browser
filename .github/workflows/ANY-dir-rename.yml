@@ -6,9 +6,12 @@ on:
       src:
         description: "Source path"
         required: true
+
       dest:
         description: "Destination path"
         required: true
+
+  pull_request:
 
 jobs:
   rename:

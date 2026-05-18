@@ -3,13 +3,13 @@ name: "ANY BRANCH: lint codebase"
 on:
   push:
     branches:
-      - master
       - kiwi
+      - master
 
   pull_request:
     branches:
-      - master
       - kiwi
+      - master
 
 jobs:
   build:

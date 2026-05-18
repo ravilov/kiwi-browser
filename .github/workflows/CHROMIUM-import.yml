@@ -10,6 +10,8 @@ on:
         required: true
         default: ""
 
+  pull_request:
+
 env:
   CHROMIUM_MAJOR:
   CHROMIUM_MINOR:

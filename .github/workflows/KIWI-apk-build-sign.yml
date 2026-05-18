@@ -7,10 +7,13 @@ on:
         description: 'Create a draft release in Google Play Store?'
         required: true
         default: 'no'
+
       announceOnMessengers:
         description: 'Announce new release on Discord and Telegram channels?'
         required: true
         default: 'no'
+
+  pull_request:
 
 jobs:
   build:
