@@ -59,7 +59,7 @@ jobs:
 
       # this is done on purpose
       # see: https://redfin.engineering/git-rebasing-public-branches-works-much-better-than-youd-think-ecc9a115aea9
-      - name: Pushing new branch
+      - name: Push new branch
         run: |
           git push origin ${{ env.local }}-new:${{ env.local }} --force
 

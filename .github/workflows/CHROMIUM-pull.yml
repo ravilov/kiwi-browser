@@ -23,8 +23,6 @@ on:
         required: true
         default: '24'
 
-  pull_request:
-
 env:
   CHROMIUM_MAJOR:
   CHROMIUM_MINOR:

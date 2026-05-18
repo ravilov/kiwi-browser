@@ -1,10 +1,10 @@
 name: "[ANY BRANCH] build APK"
 
 on:
-  pull_request:
-    branches:
-      - kiwi
-      - master
+# pull_request:
+#   branches:
+#     - kiwi
+#     - master
   workflow_dispatch:
 
 concurrency: build_test_apk

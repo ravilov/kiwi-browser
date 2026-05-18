@@ -3,10 +3,10 @@ name: "[ANY BRANCH] lint codebase"
 on:
   workflow_dispatch:
 
-  push:
-    branches:
-      - kiwi
-      - master
+# push:
+#   branches:
+#     - kiwi
+#     - master
 
 jobs:
   build:

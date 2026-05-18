@@ -3,21 +3,25 @@ name: "[KIWI] download icon from FontAwesome"
 on:
   workflow_dispatch:
     inputs:
-      iconNameFA:
+      name:
         description: "FA icon name"
         required: true
+        default: ''
 
-      iconTypeFA:
+      type:
         description: "FA icon type"
         required: true
+        default: ''
 
-      fillColor:
+      fill:
         description: "Edit fill/stroke color"
         required: false
+        default: ''
 
-      fileNameInChromium:
+      filename:
         description: "Chromium icon name"
         required: true
+        default: ''
 
 jobs:
   build:
@@ -48,11 +52,11 @@ jobs:
 
       - name: Execute script - replace icons with new FA ones
         run: |
-          bash ./toolbox/icon_update_script.sh "./node_modules/@fortawesome/fontawesome-pro/svgs/${{ github.event.inputs.iconTypeFA }}/${{ github.event.inputs.iconNameFA }}.svg" "${{ github.event.inputs.fileNameInChromium }}" "${{ github.event.inputs.fillColor }}"
+          bash ./toolbox/icon_update_script.sh "./node_modules/@fortawesome/fontawesome-pro/svgs/${{ github.event.inputs.type }}/${{ github.event.inputs.name }}.svg" "${{ github.event.inputs.filename }}" "${{ github.event.inputs.fill }}"
 
       - name: Git auto commit
         uses: stefanzweifel/git-auto-commit-action@v4.11.0
         with:
-          commit_message: update ${{ github.event.inputs.fileNameInChromium }} with ${{ github.event.inputs.iconTypeFA }}/${{ github.event.inputs.iconNameFA }} icon
+          commit_message: update ${{ github.event.inputs.filename }} with ${{ github.event.inputs.type }}/${{ github.event.inputs.name }} icon
           file_pattern: ./*.png
 

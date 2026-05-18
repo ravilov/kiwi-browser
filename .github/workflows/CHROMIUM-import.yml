@@ -8,7 +8,7 @@ on:
       path:
         description: "Path in Chromium repo:"
         required: true
-        default: ""
+        default: ''
 
 env:
   CHROMIUM_MAJOR:
