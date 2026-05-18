@@ -1,4 +1,4 @@
-name: "ANY BRANCH: delete a committed file"
+name: "[ANY BRANCH] delete a committed file"
 
 on:
   workflow_dispatch:
@@ -6,8 +6,6 @@ on:
       filename:
         description: "Filename to delete (all history will be deleted)"
         required: true
-
-  pull_request:
 
 jobs:
   delete:

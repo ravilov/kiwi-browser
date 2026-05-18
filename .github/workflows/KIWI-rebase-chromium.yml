@@ -1,9 +1,7 @@
-name: "KIWI: rebase on top of 'chromium' branch"
+name: "[KIWI] rebase on top of 'chromium' branch"
 
 on:
   workflow_dispatch:
-
-  pull_request:
 
 env:
   local: master

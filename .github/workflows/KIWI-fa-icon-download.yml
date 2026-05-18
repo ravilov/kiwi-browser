@@ -1,4 +1,4 @@
-name: "KIWI: download icon from FontAwesome"
+name: "[KIWI] download icon from FontAwesome"
 
 on:
   workflow_dispatch:
@@ -18,8 +18,6 @@ on:
       fileNameInChromium:
         description: "Chromium icon name"
         required: true
-
-  pull_request:
 
 jobs:
   build:

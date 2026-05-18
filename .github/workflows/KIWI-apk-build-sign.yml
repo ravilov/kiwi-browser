@@ -1,4 +1,4 @@
-name: "KIWI: Build and sign release APK"
+name: "[KIWI] Build and sign release APK"
 
 on:
   workflow_dispatch:
@@ -12,8 +12,6 @@ on:
         description: 'Announce new release on Discord and Telegram channels?'
         required: true
         default: 'no'
-
-  pull_request:
 
 jobs:
   build:

@@ -1,4 +1,4 @@
-name: "ANY BRANCH: rename directory"
+name: "[ANY BRANCH] rename directory"
 
 on:
   workflow_dispatch:
@@ -10,8 +10,6 @@ on:
       dest:
         description: "Destination path"
         required: true
-
-  pull_request:
 
 jobs:
   rename:

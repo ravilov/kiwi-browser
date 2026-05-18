@@ -1,9 +1,7 @@
-name: "FORK: rebase on top of master branch"
+name: "[FORK] rebase on top of 'master' branch"
 
 on:
   workflow_dispatch:
-
-  pull_request:
 
 env:
   local: master

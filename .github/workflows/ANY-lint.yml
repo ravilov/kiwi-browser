@@ -1,12 +1,9 @@
-name: "ANY BRANCH: lint codebase"
+name: "[ANY BRANCH] lint codebase"
 
 on:
-  push:
-    branches:
-      - kiwi
-      - master
+  workflow_dispatch:
 
-  pull_request:
+  push:
     branches:
       - kiwi
       - master

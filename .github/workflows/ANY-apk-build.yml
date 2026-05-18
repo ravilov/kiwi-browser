@@ -1,4 +1,4 @@
-name: "ANY BRANCH: build APK"
+name: "[ANY BRANCH] build APK"
 
 on:
   pull_request:

@@ -1,4 +1,4 @@
-name: "CHROMIUM: update files from upstream"
+name: "[CHROMIUM] update files from upstream"
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
       NEW_CHROMIUM_MAJOR:
         description: "Chromium major version:"
         required: true
-        default: '93'
+        default: '105'
 
       NEW_CHROMIUM_MINOR:
         description: "Chromium minor version:"
@@ -16,12 +16,12 @@ on:
       NEW_CHROMIUM_BUILD:
         description: "Chromium build version:"
         required: true
-        default: '4577'
+        default: '5195'
 
       NEW_CHROMIUM_PATCH:
         description: "Chromium patch version:"
         required: true
-        default: '25'
+        default: '24'
 
   pull_request:
 

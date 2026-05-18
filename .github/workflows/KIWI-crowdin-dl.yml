@@ -1,9 +1,7 @@
-name: "KIWI: Download translations from Crowdin"
+name: "[KIWI] download translations from Crowdin"
 
 on:
   workflow_dispatch:
-
-  pull_request:
 
 jobs:
   build:
