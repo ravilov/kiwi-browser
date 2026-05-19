@@ -1,0 +1,62 @@
+name: "[KIWI] download icon from FontAwesome"
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: "FA icon name"
+        required: true
+        default: ''
+
+      type:
+        description: "FA icon type"
+        required: true
+        default: ''
+
+      fill:
+        description: "Edit fill/stroke color"
+        required: false
+        default: ''
+
+      filename:
+        description: "Chromium icon name"
+        required: true
+        default: ''
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2.3.4
+
+      - name: Set up Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '10.x'
+
+      - name: Configure NPM repo
+        env:
+          FONTAWESOME_NPM_AUTH_TOKEN: ${{ secrets.FONTAWESOME_NPM_AUTH_TOKEN }}
+        run: |
+          npm config set "@fortawesome:registry" https://npm.fontawesome.com/
+          npm config set "//npm.fontawesome.com/:_authToken" "$FONTAWESOME_NPM_AUTH_TOKEN"
+
+      - name: Install FA package
+        run: |
+          npm install --save @fortawesome/fontawesome-pro@next
+
+      - name: Install support packages
+        run: |
+          sudo apt install -y librsvg2-bin imagemagick
+
+      - name: Execute script - replace icons with new FA ones
+        run: |
+          bash ./toolbox/icon_update_script.sh "./node_modules/@fortawesome/fontawesome-pro/svgs/${{ github.event.inputs.type }}/${{ github.event.inputs.name }}.svg" "${{ github.event.inputs.filename }}" "${{ github.event.inputs.fill }}"
+
+      - name: Git auto commit
+        uses: stefanzweifel/git-auto-commit-action@v4.11.0
+        with:
+          commit_message: update ${{ github.event.inputs.filename }} with ${{ github.event.inputs.type }}/${{ github.event.inputs.name }} icon
+          file_pattern: ./*.png
+

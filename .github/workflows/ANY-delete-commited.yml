@@ -1,10 +1,10 @@
-name: 'Any branch: Delete a committed file'
+name: "[ANY BRANCH] delete a committed file"
 
 on:
   workflow_dispatch:
     inputs:
       filename:
-        description: 'The filename to delete (all history will be deleted for this file)'     
+        description: "Filename to delete (all history will be deleted)"
         required: true
 
 jobs:
@@ -14,8 +14,8 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-        
-      - name: Setting-up GitHub username
+
+      - name: Setting up GitHub username
         run: |
           git config --global user.email "github@actions"
           git config --global user.name "Repository manager"
@@ -23,5 +23,8 @@ jobs:
       - name: Deleting file from history
         run: |
           git filter-branch --force --index-filter "git rm --cached --ignore-unmatch ${{ github.event.inputs.filename }}" --prune-empty --tag-name-filter cat -- --all
-      
-      - run: git push --force --all
+
+      - name: Pushing changes
+        run: |
+          git push --force --all
+

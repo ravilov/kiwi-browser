@@ -1,0 +1,43 @@
+name: "[KIWI] force rebase on top of local 'chromium' branch"
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Set up GitHub username
+        run: |
+          git config --global user.email "github@actions"
+          git config --global user.name "Repository manager"
+
+      - name: Fetch Kiwi branch
+        run: |
+          git fetch origin ${{ github.ref_name }}
+
+      - name: Switch to Kiwi
+        run: |
+          git checkout origin/${{ github.ref_name }}
+
+      # note that --ours also corresponds (more intuitively) to the 'Current Changes' in your IDE
+      # when resolving conflicts, whereas --theirs corresponds to 'Incoming Changes'
+      - name: Rebase on top of chromium branch
+        run: |
+          git rebase --strategy-option ours origin/chromium --committer-date-is-author-date
+
+      - name: Prepare new branch
+        run: |
+          git checkout -b ${{ github.ref_name }}-new
+
+      # this is done on purpose
+      # see: https://redfin.engineering/git-rebasing-public-branches-works-much-better-than-youd-think-ecc9a115aea9
+      - name: Push new branch
+        run: |
+          git push origin ${{ github.ref_name }}-new:${{ github.ref_name }} --force
+

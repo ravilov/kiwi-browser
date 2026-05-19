@@ -1,0 +1,90 @@
+name: "[CHROMIUM] import file"
+# Import a file from Chromium, relative path to https://source.chromium.org/chromium/chromium/src
+# In case the file is in a drawable-* folder (e.g. drawable-mdpi), all the adjacent (mdpi, xhdpi, etc) assets for the same file will be imported.
+
+on:
+  workflow_dispatch:
+    inputs:
+      path:
+        description: "Path in Chromium repo:"
+        required: true
+        default: ''
+
+env:
+  CHROMIUM_MAJOR:
+  CHROMIUM_MINOR:
+  CHROMIUM_BUILD:
+  CHROMIUM_PATCH:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      # For some reasons Git thinks it is a good idea to compact the Chromium repository
+      - name: Disable Git auto-packing
+        run: |
+          git config --global gc.auto 0
+
+      - name: Set up GitHub username
+        run: |
+          git config --global user.email "github@actions"
+          git config --global user.name "Repository manager"
+
+      - name: Prepare local Chromium branch
+        run: |
+          git switch chromium
+
+      - name: Load settings from CHROMIUM_VERSION
+        run: |
+          source CHROMIUM_VERSION; export $( cut -d= -f1 CHROMIUM_VERSION | grep -vF '#' )
+          env | grep -F CHROMIUM_ >> $GITHUB_ENV
+
+      - name: Download file
+        run: |
+          wget "https://chromium.googlesource.com/chromium/src/+/refs/tags/${{ env.CHROMIUM_MAJOR }}.${{ env.CHROMIUM_MINOR }}.${{ env.CHROMIUM_BUILD }}.${{ env.CHROMIUM_PATCH }}/${{ github.event.inputs.path }}?format=TEXT" -O /tmp/file.txt
+
+      - name: Create target folder
+        run: |
+          mkdir -p "$( dirname '${{ github.event.inputs.path }}' )"
+
+      - name: Decode file
+        run: |
+          cat /tmp/file.txt | base64 --decode > ${{ github.event.inputs.path }}
+
+      - name: Add file to repo
+        run: |
+          git add ${{ github.event.inputs.path }}
+
+      - name: Import related image assets
+        if: contains(github.event.inputs.path, 'drawable-') || contains(github.event.inputs.path, 'mipmap-')
+        continue-on-error: true
+        run: |
+          tmpfile="/tmp/file.txt"
+          for dir in drawable mipmap
+          do
+            for res in mdpi hdpi xhdpi xxhdpi xxxhdpi
+            do
+              echo "Processing ${dir}-${res}"
+              target="$( echo ${{ github.event.inputs.path }} | sed -E -e "s!(-mdpi|-hdpi|-xhdpi|-xxhdpi|-xxxhdpi)/!-${res}/!g")"
+              rm -f "${tmpfile}"
+              wget "https://chromium.googlesource.com/chromium/src/+/refs/tags/${{ env.CHROMIUM_MAJOR }}.${{ env.CHROMIUM_MINOR }}.${{ env.CHROMIUM_BUILD }}.${{ env.CHROMIUM_PATCH }}/${target}?format=TEXT" -O "${tmpfile}" && \
+              mkdir -p "$( dirname "${target}" )/" && \
+              cat "${tmpfile}" | base64 --decode > "${target}" && \
+              git add "${target}"
+            done
+          done
+
+      - name: Commit files
+        run: |
+          git commit --allow-empty -a -m \
+            '[CHROMIUM] import ${{ github.event.inputs.path }} from version ${{ env.CHROMIUM_MAJOR }}.${{ env.CHROMIUM_MINOR }}.${{ env.CHROMIUM_BUILD }}.${{ env.CHROMIUM_PATCH }}'
+
+      - name: Push to repo
+        run: |
+          git push origin chromium
+

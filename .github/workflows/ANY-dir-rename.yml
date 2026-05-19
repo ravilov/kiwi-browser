@@ -1,0 +1,25 @@
+name: "[ANY BRANCH] rename directory"
+
+on:
+  workflow_dispatch:
+    inputs:
+      src:
+        description: "Source path"
+        required: true
+
+      dest:
+        description: "Destination path"
+        required: true
+
+jobs:
+  rename:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: EndBug/add-and-commit@v5.1.0
+
+      - run: |
+          ls -laR
+      - run: |
+          git mv ${{ github.event.inputs.src }} ${{ github.event.inputs.dest }}
+
