@@ -10,7 +10,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2.3.4
 
-      - name: Downloading translations
+      - name: Download translations
         run: |
           php toolbox/download_translations_from_crowdin.php ${{ secrets.CROWDIN_APIKEY }}
 

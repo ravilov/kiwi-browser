@@ -18,24 +18,24 @@ jobs:
         id: branch-name
         uses: tj-actions/branch-names@v4.8
 
-      - name: Building APK (if manually triggered)
+      - name: Build APK (if manually triggered)
         if: github.event_name != 'pull_request'
         run: |
           curl --http1.0 --no-buffer -s 'http://longbuild.find.kiwi/build_apk.php?build_key=${{ secrets.BUILD_KEY }}&git_user=${{ github.repository_owner }}&git_repository=${{ github.event.repository.name }}&git_runid=${{ github.run_id }}&git_branch=${{ steps.branch-name.outputs.current_branch }}'
 
       # Variables are from: https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads#pullrequestevent
       # and https://docs.github.com/en/rest/reference/pulls
-      - name: Building APK (if pull request)
+      - name: Build APK (if pull request)
         if: github.event_name == 'pull_request'
         run: |
           curl --http1.0 --no-buffer -s 'http://longbuild.find.kiwi/build_apk.php?build_key=${{ secrets.BUILD_KEY }}&git_user=${{ github.event.pull_request.head.repo.owner.login }}&git_repository=${{ github.event.pull_request.head.repo.name }}&git_runid=${{ github.run_id }}&git_branch=${{ github.event.pull_request.head.ref }}'
 
-      - name: Downloading APK
+      - name: Download APK
         if: github.event_name != 'pull_request'
         run: |
           wget -q 'https://build.find.kiwi/apks/${{ github.run_id }}/out.apk'
 
-      - name: Creating release
+      - name: Create release
         if: github.event_name != 'pull_request'
         id: create_release
         uses: actions/create-release@v1.1.4
@@ -49,7 +49,7 @@ jobs:
           body: |
             This is a test build initiated by ${{ github.actor }}.
 
-      - name: Uploading test apk (arm64)
+      - name: Upload test APK (arm64)
         if: github.event_name != 'pull_request'
         uses: actions/upload-release-asset@v1
         env:
@@ -60,7 +60,7 @@ jobs:
           asset_name: ${{ github.repository_owner }}.${{ github.event.repository.name }}.${{ steps.branch-name.outputs.current_branch }}.${{ github.run_id }}-unofficial-arm64.apk
           asset_content_type: application/vnd.android.package-archive
 
-      - name: Displaying download link
+      - name: Show download link
         run: |
           echo "Build can be downloaded at https://build.find.kiwi/apks/${{ github.run_id }}/out.apk"
 
