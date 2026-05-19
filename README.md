@@ -1,8 +1,17 @@
-![KiwiBrowser](https://raw.githubusercontent.com/ravilov/kiwi/kiwi/kiwi_logo_circle.svg)
-----
+<base href="https://github.com/ravilov/kiwi-browser" />
 
-[![releases](https://img.shields.io/github/v/release/ravilov/kiwi?include_prereleases&label=latest+release)](https://github.com/ravilov/kiwi/releases)
-[![GitHub](https://img.shields.io/github/downloads/ravilov/kiwi/total?label=GitHub+downloads&color=%6BDDD5)](https://github.com/ravilov/kiwi/release)
-[![license](https://img.shields.io/github/license/ravilov/kiwi?color=%236BDDD5)](https://github.com/ravilov/kiwi/blob/kiwi/LICENSE)
+
+![Kiwi Browser logo](https://raw.githubusercontent.com/ravilov/kiwi-browser/master/kiwi_logo_circle.svg)
+
+----------
+
+[![latest](https://img.shields.io/github/v/release/ravilov/kiwi-browser?include_prereleases&label=latest+release)](./releases)
+[![GH downloads](https://img.shields.io/github/downloads/ravilov/kiwi-browser/total?label=GitHub+downloads&color=%6BDDD5)](./release)
+[![license](https://img.shields.io/github/license/ravilov/kiwi-browser?color=%236BDDD5)](./blob/kiwi/LICENSE)
 
 # Kiwi Browser
+
+----------
+
+Forked from the [original repo](https://github.com/kiwibrowser/src.next).
+
